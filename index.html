@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathBlocks Coloring Puzzles</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <style>
+        /* Base Styles */
+        :root {
+            --color-1: #EF4444; /* Red */
+            --color-2: #F97316; /* Orange */
+            --color-3: #EAB308; /* Yellow */
+            --color-4: #22C55E; /* Green */
+            --color-5: #3B82F6; /* Blue */
+            --color-6: #A855F7; /* Purple */
+            --color-7: #92400E; /* Brown */
+            --color-8: #1F2937; /* Black/Dark Gray */
+        }
+
+        .color-1 { background-color: var(--color-1); }
+        .color-2 { background-color: var(--color-2); }
+        .color-3 { background-color: var(--color-3); }
+        .color-4 { background-color: var(--color-4); }
+        .color-5 { background-color: var(--color-5); }
+        .color-6 { background-color: var(--color-6); }
+        .color-7 { background-color: var(--color-7); }
+        .color-8 { background-color: var(--color-8); }
+
+        .puzzle-cell {
+            min-width: 80px;
+            min-height: 80px;
+            border: 2px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: 600;
+            background: white;
+            transition: background-color 0.3s;
+        }
+
+        .puzzle-cell.solved {
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .puzzle-cell.solved.color-3,
+        .puzzle-cell.solved.color-2 {
+            color: #1F2937;
+            text-shadow: none;
+        }
+
+        /* Print Styles */
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            .print-only {
+                display: block !important;
+            }
+
+            .puzzle-container {
+                page-break-inside: avoid;
+                margin: 0;
+                padding: 0.5in;
+            }
+
+            .puzzle-cell {
+                min-width: 1in;
+                min-height: 1in;
+                border: 3pt solid #000 !important;
+                font-size: 16pt;
+            }
+
+            .color-key {
+                margin-bottom: 0.5in;
+            }
+
+            .color-swatch {
+                width: 0.5in;
+                height: 0.5in;
+                border: 2pt solid #000;
+            }
+        }
+
+        .print-only {
+            display: none;
+        }
+
+        /* Animation */
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .celebrate {
+            animation: celebrate 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-purple-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-md no-print">
+        <div class="max-w-6xl mx-auto px-4 py-6">
+            <h1 class="text-3xl font-bold text-gray-800">
+                <span class="text-red-500">M</span><span class="text-orange-500">a</span><span class="text-yellow-500">t</span><span class="text-green-500">h</span><span class="text-blue-500">B</span><span class="text-purple-500">l</span><span class="text-amber-700">o</span><span class="text-gray-800">c</span><span class="text-red-500">k</span><span class="text-orange-500">s</span>
+                Coloring Puzzles
+            </h1>
+            <p class="text-gray-600 mt-2">Generate printable math coloring pages that kids can complete independently!</p>
+        </div>
+    </header>
+
+    <!-- Controls -->
+    <section class="max-w-6xl mx-auto px-4 py-6 no-print">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-700">Puzzle Settings</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <!-- Grade Level -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Grade Level</label>
+                    <select id="gradeLevel" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="1">Grade 1 (Ages 5-6): + and -</option>
+                        <option value="2">Grade 2 (Ages 6-7): + and -</option>
+                        <option value="3" selected>Grade 3 (Ages 7-8): +, -, x</option>
+                        <option value="4">Grade 4 (Ages 8-9): +, -, x, ÷</option>
+                        <option value="5">Grade 5 (Ages 9-10): Two-step</option>
+                        <option value="6">Grade 6 (Ages 10-11): Order of ops</option>
+                        <option value="7">Grade 7 (Ages 11-12): Complex PEMDAS</option>
+                    </select>
+                </div>
+
+                <!-- Puzzle Type -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Puzzle Type</label>
+                    <select id="puzzleType" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="grid">Grid Color-by-Number</option>
+                        <option value="numberblock">Numberblocks Character</option>
+                    </select>
+                </div>
+
+                <!-- Grid Size -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Grid Size</label>
+                    <select id="gridSize" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="3">3 x 3 (Easy)</option>
+                        <option value="4" selected>4 x 4 (Medium)</option>
+                        <option value="5">5 x 5 (Challenge)</option>
+                        <option value="6">6 x 6 (Expert)</option>
+                    </select>
+                </div>
+
+                <!-- Difficulty -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
+                    <select id="difficulty" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <option value="practice">Practice (Same operation)</option>
+                        <option value="mixed" selected>Mixed (Random operations)</option>
+                        <option value="challenge">Challenge (Tiered)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+                <button id="generateBtn" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-md">
+                    Generate New Puzzle
+                </button>
+                <button id="printBtn" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors shadow-md">
+                    Print Puzzle
+                </button>
+                <button id="showAnswersBtn" class="px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors shadow-md">
+                    Show/Hide Answers
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Puzzle Container -->
+    <section class="max-w-6xl mx-auto px-4 py-6">
+        <div id="puzzleContainer" class="puzzle-container bg-white rounded-xl shadow-lg p-8">
+            <!-- Color Key -->
+            <div class="color-key mb-8">
+                <h3 class="text-lg font-semibold mb-4 text-gray-700 text-center">Color Key</h3>
+                <div class="flex flex-wrap justify-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <div class="color-swatch w-10 h-10 rounded color-1 border-2 border-gray-800"></div>
+                        <span class="font-bold">1</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="color-swatch w-10 h-10 rounded color-2 border-2 border-gray-800"></div>
+                        <span class="font-bold">2</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="color-swatch w-10 h-10 rounded color-3 border-2 border-gray-800"></div>
+                        <span class="font-bold">3</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="color-swatch w-10 h-10 rounded color-4 border-2 border-gray-800"></div>
+                        <span class="font-bold">4</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="color-swatch w-10 h-10 rounded color-5 border-2 border-gray-800"></div>
+                        <span class="font-bold">5</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="color-swatch w-10 h-10 rounded color-6 border-2 border-gray-800"></div>
+                        <span class="font-bold">6</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="color-swatch w-10 h-10 rounded color-7 border-2 border-gray-800"></div>
+                        <span class="font-bold">7</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <div class="color-swatch w-10 h-10 rounded color-8 border-2 border-gray-800"></div>
+                        <span class="font-bold">8</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Puzzle Grid -->
+            <div id="puzzleGrid" class="flex justify-center mb-8">
+                <!-- Generated puzzle will appear here -->
+            </div>
+
+            <!-- Verification -->
+            <div id="verification" class="text-center text-gray-600 mb-6">
+                <!-- Checksum will appear here -->
+            </div>
+
+            <!-- Instructions (Print) -->
+            <div class="print-only text-center text-gray-600 border-t pt-4 mt-4">
+                <p class="text-lg">Solve each problem. Use the answer (1-8) to pick your color!</p>
+                <div class="flex justify-center gap-8 mt-4 text-2xl">
+                    <span>1. Solve</span>
+                    <span>2. Find Color</span>
+                    <span>3. Fill In</span>
+                </div>
+            </div>
+
+            <!-- Name/Date Field (Print) -->
+            <div class="print-only border-t pt-4 mt-4">
+                <p class="text-gray-600">Name: _________________________ Date: _____________</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center py-8 text-gray-500 no-print">
+        <p>Made with love for kids discovering that numbers are pretty cool!</p>
+    </footer>
+
+    <script>
+        // ============================================
+        // MathBlocks Coloring Puzzles - Core Logic
+        // ============================================
+
+        // State
+        let currentPuzzle = null;
+        let showingAnswers = false;
+
+        // Color mapping
+        const COLORS = {
+            1: { name: 'Red', class: 'color-1', hex: '#EF4444' },
+            2: { name: 'Orange', class: 'color-2', hex: '#F97316' },
+            3: { name: 'Yellow', class: 'color-3', hex: '#EAB308' },
+            4: { name: 'Green', class: 'color-4', hex: '#22C55E' },
+            5: { name: 'Blue', class: 'color-5', hex: '#3B82F6' },
+            6: { name: 'Purple', class: 'color-6', hex: '#A855F7' },
+            7: { name: 'Brown', class: 'color-7', hex: '#92400E' },
+            8: { name: 'Black', class: 'color-8', hex: '#1F2937' }
+        };
+
+        // ============================================
+        // Problem Generation
+        // ============================================
+
+        /**
+         * Generate a math problem that equals a specific target (1-8)
+         * based on grade level
+         */
+        function generateProblem(target, grade, difficulty) {
+            const operations = getOperationsForGrade(grade);
+            const op = operations[Math.floor(Math.random() * operations.length)];
+
+            switch (op) {
+                case '+':
+                    return generateAddition(target, grade);
+                case '-':
+                    return generateSubtraction(target, grade);
+                case '*':
+                    return generateMultiplication(target, grade);
+                case '/':
+                    return generateDivision(target, grade);
+                case 'two-step':
+                    return generateTwoStep(target, grade);
+                case 'pemdas':
+                    return generatePemdas(target, grade);
+                default:
+                    return generateAddition(target, grade);
+            }
+        }
+
+        function getOperationsForGrade(grade) {
+            switch (parseInt(grade)) {
+                case 1:
+                case 2:
+                    return ['+', '-'];
+                case 3:
+                    return ['+', '-', '*'];
+                case 4:
+                    return ['+', '-', '*', '/'];
+                case 5:
+                    return ['two-step'];
+                case 6:
+                case 7:
+                    return ['pemdas'];
+                default:
+                    return ['+', '-'];
+            }
+        }
+
+        function generateAddition(target, grade) {
+            const maxNum = grade <= 2 ? 10 : 20;
+            const a = Math.floor(Math.random() * Math.min(target, maxNum - target + 1));
+            const b = target - a;
+            return { expression: `${a} + ${b}`, answer: target };
+        }
+
+        function generateSubtraction(target, grade) {
+            const maxNum = grade <= 2 ? 10 : 20;
+            const b = Math.floor(Math.random() * (maxNum - target)) + 1;
+            const a = target + b;
+            return { expression: `${a} - ${b}`, answer: target };
+        }
+
+        function generateMultiplication(target, grade) {
+            // Find factors of target
+            const factors = [];
+            for (let i = 1; i <= target; i++) {
+                if (target % i === 0 && i <= 4 && (target / i) <= 10) {
+                    factors.push([i, target / i]);
+                }
+            }
+
+            if (factors.length === 0) {
+                return generateAddition(target, grade);
+            }
+
+            const [a, b] = factors[Math.floor(Math.random() * factors.length)];
+            // Randomly swap order
+            if (Math.random() > 0.5) {
+                return { expression: `${a} × ${b}`, answer: target };
+            }
+            return { expression: `${b} × ${a}`, answer: target };
+        }
+
+        function generateDivision(target, grade) {
+            // Generate dividend that divides evenly to target
+            const multipliers = [2, 3, 4, 5, 6];
+            const mult = multipliers[Math.floor(Math.random() * multipliers.length)];
+            const dividend = target * mult;
+            return { expression: `${dividend} ÷ ${mult}`, answer: target };
+        }
+
+        function generateTwoStep(target, grade) {
+            // (a + b) * c = target or (a * b) + c = target
+            const patterns = [
+                () => {
+                    // (a + b) where result, then shown as addition that equals target
+                    const a = Math.floor(Math.random() * target);
+                    const b = target - a;
+                    const c = Math.floor(Math.random() * 5) + 1;
+                    return {
+                        expression: `(${a + c} - ${c}) + ${b}`,
+                        answer: target
+                    };
+                },
+                () => {
+                    // a × b + c = target
+                    const c = Math.floor(Math.random() * (target - 1)) + 1;
+                    const remainder = target - c;
+                    if (remainder >= 2) {
+                        const factors = [];
+                        for (let i = 1; i <= remainder; i++) {
+                            if (remainder % i === 0 && i <= 4 && (remainder / i) <= 4) {
+                                factors.push([i, remainder / i]);
+                            }
+                        }
+                        if (factors.length > 0) {
+                            const [a, b] = factors[Math.floor(Math.random() * factors.length)];
+                            return { expression: `${a} × ${b} + ${c}`, answer: target };
+                        }
+                    }
+                    return generateAddition(target, grade);
+                }
+            ];
+
+            return patterns[Math.floor(Math.random() * patterns.length)]();
+        }
+
+        function generatePemdas(target, grade) {
+            // More complex order of operations
+            const patterns = [
+                () => {
+                    // a + b × c where b × c + a = target
+                    for (let b = 1; b <= 3; b++) {
+                        for (let c = 1; c <= 3; c++) {
+                            const product = b * c;
+                            const a = target - product;
+                            if (a >= 0 && a <= 10) {
+                                return { expression: `${a} + ${b} × ${c}`, answer: target };
+                            }
+                        }
+                    }
+                    return generateAddition(target, grade);
+                },
+                () => {
+                    // (a + b) ÷ c = target
+                    const c = Math.floor(Math.random() * 3) + 2;
+                    const sum = target * c;
+                    const a = Math.floor(Math.random() * sum);
+                    const b = sum - a;
+                    if (a >= 0 && b >= 0) {
+                        return { expression: `(${a} + ${b}) ÷ ${c}`, answer: target };
+                    }
+                    return generateDivision(target, grade);
+                }
+            ];
+
+            return patterns[Math.floor(Math.random() * patterns.length)]();
+        }
+
+        // ============================================
+        // Puzzle Generation
+        // ============================================
+
+        function generateGridPuzzle(size, grade, difficulty) {
+            const grid = [];
+            let checksum = 0;
+
+            for (let row = 0; row < size; row++) {
+                const rowData = [];
+                for (let col = 0; col < size; col++) {
+                    // For challenge mode, make bottom half harder
+                    let effectiveGrade = grade;
+                    if (difficulty === 'challenge' && row >= size / 2) {
+                        effectiveGrade = Math.min(7, parseInt(grade) + 1);
+                    }
+
+                    // Generate target answer (1-8)
+                    const target = Math.floor(Math.random() * 8) + 1;
+                    const problem = generateProblem(target, effectiveGrade, difficulty);
+
+                    rowData.push(problem);
+                    checksum += problem.answer;
+                }
+                grid.push(rowData);
+            }
+
+            return { type: 'grid', grid, checksum, size };
+        }
+
+        function generateNumberblockPuzzle(grade, difficulty) {
+            // Pick a random number 1-8 for the character
+            const characterNumber = Math.floor(Math.random() * 8) + 1;
+            const blocks = [];
+
+            // Create blocks equal to the character number
+            for (let i = 0; i < characterNumber; i++) {
+                const problem = generateProblem(characterNumber, grade, difficulty);
+                blocks.push(problem);
+            }
+
+            const checksum = characterNumber * characterNumber;
+
+            return {
+                type: 'numberblock',
+                characterNumber,
+                blocks,
+                checksum,
+                color: COLORS[characterNumber]
+            };
+        }
+
+        // ============================================
+        // Rendering
+        // ============================================
+
+        function renderPuzzle(puzzle) {
+            const gridContainer = document.getElementById('puzzleGrid');
+            const verificationContainer = document.getElementById('verification');
+
+            if (puzzle.type === 'grid') {
+                renderGridPuzzle(puzzle, gridContainer);
+            } else if (puzzle.type === 'numberblock') {
+                renderNumberblockPuzzle(puzzle, gridContainer);
+            }
+
+            // Render verification
+            verificationContainer.innerHTML = `
+                <p class="text-lg">
+                    <strong>Check your work:</strong> Add up all your answers.
+                    You should get: <span class="text-2xl font-bold text-blue-600">${puzzle.checksum}</span>
+                </p>
+            `;
+        }
+
+        function renderGridPuzzle(puzzle, container) {
+            const { grid, size } = puzzle;
+
+            let html = `<div class="grid gap-0" style="grid-template-columns: repeat(${size}, 1fr);">`;
+
+            for (let row = 0; row < size; row++) {
+                for (let col = 0; col < size; col++) {
+                    const cell = grid[row][col];
+                    html += `
+                        <div class="puzzle-cell" data-answer="${cell.answer}" data-row="${row}" data-col="${col}">
+                            ${cell.expression}
+                        </div>
+                    `;
+                }
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+
+            // Add click handlers for interactive solving
+            container.querySelectorAll('.puzzle-cell').forEach(cell => {
+                cell.addEventListener('click', () => handleCellClick(cell));
+            });
+        }
+
+        function renderNumberblockPuzzle(puzzle, container) {
+            const { characterNumber, blocks, color } = puzzle;
+
+            let html = `
+                <div class="text-center">
+                    <p class="text-xl font-semibold mb-4">
+                        This is "${getNumberName(characterNumber)}"!
+                        Solve each block - all answers should equal ${characterNumber}.
+                        <br>Color them all <span class="font-bold" style="color: ${color.hex}">${color.name}</span>!
+                    </p>
+                    <div class="inline-flex flex-col items-center gap-0">
+                        <!-- Face -->
+                        <div class="w-20 h-12 flex items-center justify-center text-3xl">
+                            ${characterNumber <= 4 ? '😊' : '😄'}
+                        </div>
+            `;
+
+            // Render blocks from top to bottom
+            for (let i = blocks.length - 1; i >= 0; i--) {
+                const block = blocks[i];
+                html += `
+                    <div class="puzzle-cell" data-answer="${block.answer}" data-index="${i}"
+                         style="width: 100px; height: 60px;">
+                        ${block.expression}
+                    </div>
+                `;
+            }
+
+            html += `
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+
+            // Add click handlers
+            container.querySelectorAll('.puzzle-cell').forEach(cell => {
+                cell.addEventListener('click', () => handleCellClick(cell));
+            });
+        }
+
+        function getNumberName(n) {
+            const names = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight'];
+            return names[n] || n.toString();
+        }
+
+        function handleCellClick(cell) {
+            const answer = parseInt(cell.dataset.answer);
+
+            if (cell.classList.contains('solved')) {
+                // Toggle off
+                cell.classList.remove('solved', COLORS[answer].class);
+            } else {
+                // Color it
+                cell.classList.add('solved', COLORS[answer].class);
+
+                // Check if puzzle is complete
+                checkPuzzleComplete();
+            }
+        }
+
+        function checkPuzzleComplete() {
+            const cells = document.querySelectorAll('.puzzle-cell');
+            const allSolved = Array.from(cells).every(cell => cell.classList.contains('solved'));
+
+            if (allSolved) {
+                // Celebrate!
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+
+                document.getElementById('puzzleGrid').classList.add('celebrate');
+                setTimeout(() => {
+                    document.getElementById('puzzleGrid').classList.remove('celebrate');
+                }, 500);
+            }
+        }
+
+        function toggleAnswers() {
+            showingAnswers = !showingAnswers;
+            const cells = document.querySelectorAll('.puzzle-cell');
+
+            cells.forEach(cell => {
+                const answer = parseInt(cell.dataset.answer);
+                if (showingAnswers) {
+                    cell.classList.add('solved', COLORS[answer].class);
+                } else {
+                    cell.classList.remove('solved', COLORS[answer].class);
+                }
+            });
+
+            document.getElementById('showAnswersBtn').textContent =
+                showingAnswers ? 'Hide Answers' : 'Show/Hide Answers';
+        }
+
+        // ============================================
+        // Event Handlers
+        // ============================================
+
+        function handleGenerate() {
+            const grade = document.getElementById('gradeLevel').value;
+            const puzzleType = document.getElementById('puzzleType').value;
+            const gridSize = parseInt(document.getElementById('gridSize').value);
+            const difficulty = document.getElementById('difficulty').value;
+
+            showingAnswers = false;
+            document.getElementById('showAnswersBtn').textContent = 'Show/Hide Answers';
+
+            if (puzzleType === 'grid') {
+                currentPuzzle = generateGridPuzzle(gridSize, grade, difficulty);
+            } else {
+                currentPuzzle = generateNumberblockPuzzle(grade, difficulty);
+            }
+
+            renderPuzzle(currentPuzzle);
+        }
+
+        function handlePrint() {
+            window.print();
+        }
+
+        // ============================================
+        // Initialization
+        // ============================================
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Set up event listeners
+            document.getElementById('generateBtn').addEventListener('click', handleGenerate);
+            document.getElementById('printBtn').addEventListener('click', handlePrint);
+            document.getElementById('showAnswersBtn').addEventListener('click', toggleAnswers);
+
+            // Toggle grid size visibility based on puzzle type
+            document.getElementById('puzzleType').addEventListener('change', (e) => {
+                const gridSizeContainer = document.getElementById('gridSize').parentElement;
+                gridSizeContainer.style.display = e.target.value === 'grid' ? 'block' : 'none';
+            });
+
+            // Generate initial puzzle
+            handleGenerate();
+        });
+    </script>
+</body>
+</html>
