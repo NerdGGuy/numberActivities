@@ -17,7 +17,10 @@ const GameState = {
     isEraser: false,
     userColors: {},
     soundEnabled: true,
-    activeColors: []
+    activeColors: [],
+    targetColor: null,      // The ONE color for the entire path
+    pathCellCount: 0,       // Total path cells (for progress)
+    correctCellCount: 0     // Correctly colored path cells
 };
 
 // Color mapping with 8 colors
@@ -39,11 +42,15 @@ const MODE_CONFIG = {
     hard: { colors: [1, 2, 3, 4, 5, 6, 7, 8], name: 'Hard' }  // All 8 colors
 };
 
-// Size configurations
+// Size configurations with A4 print support
 const SIZE_CONFIG = {
-    small: { size: 5, cellClass: 'small' },
-    medium: { size: 7, cellClass: 'medium' },
-    large: { size: 9, cellClass: 'large' }
+    small: { size: 5, cellClass: 'small', label: 'Small (5×5)' },
+    medium: { size: 7, cellClass: 'medium', label: 'Medium (7×7)' },
+    large: { size: 9, cellClass: 'large', label: 'Large (9×9)' },
+    a4Small: { size: 10, cellClass: 'a4-sm', label: 'A4 Small (10×10)' },
+    a4Medium: { size: 12, cellClass: 'a4-md', label: 'A4 Medium (12×12)' },
+    a4Large: { size: 15, cellClass: 'a4-lg', label: 'A4 Large (15×15)' },
+    a4XL: { size: 18, cellClass: 'a4-xl', label: 'A4 Extra Large (18×18)' }
 };
 
 // ============================================
@@ -225,48 +232,54 @@ function generateMaze() {
     GameState.mode = document.getElementById('modeSelect').value;
     GameState.activeColors = MODE_CONFIG[GameState.mode].colors;
     GameState.userColors = {};
+    GameState.correctCellCount = 0;
 
-    // Initialize maze grid (0 = wall, 1 = path)
+    // Select ONE target color for the entire path
+    GameState.targetColor = GameState.activeColors[Math.floor(Math.random() * GameState.activeColors.length)];
+
+    // Initialize maze grid
     const maze = [];
     for (let i = 0; i < size; i++) {
         maze.push(new Array(size).fill(null));
     }
 
-    // Generate a valid path from top-left to bottom-right
-    const path = generatePath(size);
+    // Generate a corridor-style path from top-left to bottom-right
+    const path = generateCorridorPath(size);
     GameState.path = path;
+    GameState.pathCellCount = path.length - 2; // Exclude START and END
 
-    // Mark path cells and add problems
+    // Mark path cells - ALL use the same target color!
     path.forEach((pos, idx) => {
-        const colorIndex = GameState.activeColors[Math.floor(Math.random() * GameState.activeColors.length)];
-        const problem = generateProblem(colorIndex, GameState.grade);
+        const problem = generateProblem(GameState.targetColor, GameState.grade);
 
         maze[pos.y][pos.x] = {
             type: 'path',
             ...problem,
-            colorIndex,
+            colorIndex: GameState.targetColor, // Same color for ALL path cells
             isStart: idx === 0,
             isEnd: idx === path.length - 1
         };
     });
 
-    // Fill remaining cells - some as decoys (solvable but not on path), some as walls
+    // Generate decoy colors (everything EXCEPT the target)
+    const decoyColors = GameState.activeColors.filter(c => c !== GameState.targetColor);
+
+    // Fill remaining cells with decoys and walls
     for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
             if (!maze[y][x]) {
-                // Determine if this should be a wall or decoy
-                // Cells adjacent to path are more likely to be decoys
                 const isAdjacentToPath = isAdjacentTo(x, y, path);
-                const shouldBeDecoy = isAdjacentToPath ? Math.random() > 0.3 : Math.random() > 0.6;
+                // More decoys near path to create challenge
+                const shouldBeDecoy = isAdjacentToPath ? Math.random() > 0.25 : Math.random() > 0.55;
 
-                if (shouldBeDecoy) {
-                    // Create a decoy cell with a math problem
-                    const colorIndex = GameState.activeColors[Math.floor(Math.random() * GameState.activeColors.length)];
-                    const problem = generateProblem(colorIndex, GameState.grade);
+                if (shouldBeDecoy && decoyColors.length > 0) {
+                    // Decoy cells use NON-target colors
+                    const decoyColor = decoyColors[Math.floor(Math.random() * decoyColors.length)];
+                    const problem = generateProblem(decoyColor, GameState.grade);
                     maze[y][x] = {
                         type: 'decoy',
                         ...problem,
-                        colorIndex
+                        colorIndex: decoyColor
                     };
                 } else {
                     maze[y][x] = { type: 'wall' };
@@ -277,44 +290,80 @@ function generateMaze() {
 
     GameState.maze = maze;
     renderMaze();
+    renderTargetColor();
     renderColorLegend();
     renderColorPalette();
+    updateProgress();
     hideMessage();
 }
 
-function generatePath(size) {
+/**
+ * Generate a corridor-style path with long straight sections
+ * This creates a more maze-like feel with clear corridors
+ */
+function generateCorridorPath(size) {
     const path = [];
     let x = 0, y = 0;
     path.push({ x, y });
 
-    // Create a winding path that goes from top-left to bottom-right
-    // Path can go right, down, or sometimes backtrack slightly for interest
+    // Minimum corridor length before turning (creates straight sections)
+    const minCorridorLength = Math.max(2, Math.floor(size / 4));
+    let currentDirection = Math.random() > 0.5 ? 'right' : 'down';
+    let stepsInDirection = 0;
+
     while (x < size - 1 || y < size - 1) {
         const canGoRight = x < size - 1;
         const canGoDown = y < size - 1;
 
-        // Bias towards moving forward but allow some variation
-        if (canGoRight && canGoDown) {
-            // Random choice with slight bias toward progress
-            const rand = Math.random();
-            if (rand < 0.45) {
-                x++;
-            } else if (rand < 0.9) {
-                y++;
-            } else {
-                // Occasionally add a small detour
-                x++;
+        // Determine if we should continue in current direction or turn
+        let shouldTurn = false;
+
+        if (currentDirection === 'right' && !canGoRight) {
+            shouldTurn = true;
+        } else if (currentDirection === 'down' && !canGoDown) {
+            shouldTurn = true;
+        } else if (stepsInDirection >= minCorridorLength) {
+            // After minimum corridor length, chance to turn
+            shouldTurn = Math.random() > 0.6;
+        }
+
+        if (shouldTurn) {
+            // Switch direction
+            if (currentDirection === 'right' && canGoDown) {
+                currentDirection = 'down';
+                stepsInDirection = 0;
+            } else if (currentDirection === 'down' && canGoRight) {
+                currentDirection = 'right';
+                stepsInDirection = 0;
             }
+        }
+
+        // Move in current direction
+        if (currentDirection === 'right' && canGoRight) {
+            x++;
+            stepsInDirection++;
+        } else if (currentDirection === 'down' && canGoDown) {
+            y++;
+            stepsInDirection++;
         } else if (canGoRight) {
             x++;
-        } else {
+            currentDirection = 'right';
+            stepsInDirection = 1;
+        } else if (canGoDown) {
             y++;
+            currentDirection = 'down';
+            stepsInDirection = 1;
         }
 
         path.push({ x, y });
     }
 
     return path;
+}
+
+// Keep old function for reference but use new corridor version
+function generatePath(size) {
+    return generateCorridorPath(size);
 }
 
 function isAdjacentTo(x, y, path) {
@@ -412,6 +461,49 @@ function renderColorPalette() {
     container.innerHTML = html;
 }
 
+/**
+ * Render the prominent target color display
+ * Shows kids exactly which color they're looking for
+ */
+function renderTargetColor() {
+    const container = document.getElementById('targetColorDisplay');
+    if (!container) return;
+
+    const { targetColor } = GameState;
+    const color = COLORS[targetColor];
+
+    container.innerHTML = `
+        <div class="target-color-box color-${targetColor}"></div>
+        <div class="target-color-info">
+            <span class="target-label">Find the path!</span>
+            <span class="target-instruction">Color all cells that equal <strong>${targetColor}</strong></span>
+            <span class="target-color-name">${color.name}</span>
+        </div>
+    `;
+    container.className = 'target-color-display';
+}
+
+/**
+ * Update the progress indicator
+ */
+function updateProgress() {
+    const container = document.getElementById('progressIndicator');
+    if (!container) return;
+
+    const { pathCellCount, correctCellCount } = GameState;
+    const percentage = pathCellCount > 0 ? Math.round((correctCellCount / pathCellCount) * 100) : 0;
+
+    container.innerHTML = `
+        <div class="progress-text">
+            <span>Path Progress:</span>
+            <strong>${correctCellCount} of ${pathCellCount}</strong>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: ${percentage}%"></div>
+        </div>
+    `;
+}
+
 // ============================================
 // User Interaction
 // ============================================
@@ -470,7 +562,8 @@ function handleCellClick(cellElement) {
 // ============================================
 
 function checkAnswers() {
-    const { maze, size, path } = GameState;
+    const { maze, size, path, targetColor } = GameState;
+    const colorName = COLORS[targetColor].name;
     let correctCount = 0;
     let totalPath = 0;
     let allCorrect = true;
@@ -501,10 +594,13 @@ function checkAnswers() {
                     allCorrect = false;
                 }
             } else if (cell.type === 'decoy' && userColor) {
-                // Decoy cells: show if colored correctly (even though not on path)
-                if (userColor === cell.colorIndex) {
-                    cellElement.classList.add('correct');
-                    cellElement.classList.remove('wrong');
+                // Decoy cells colored with target color are WRONG (not on path)
+                if (userColor === targetColor) {
+                    cellElement.classList.add('wrong');
+                    cellElement.classList.remove('correct');
+                } else if (userColor === cell.colorIndex) {
+                    // Colored correctly but not part of path - show as neutral
+                    cellElement.classList.remove('correct', 'wrong');
                 } else {
                     cellElement.classList.add('wrong');
                     cellElement.classList.remove('correct');
@@ -513,16 +609,20 @@ function checkAnswers() {
         }
     }
 
+    // Update progress state
+    GameState.correctCellCount = correctCount;
+    updateProgress();
+
     // Show result message
     if (allCorrect && correctCount === totalPath) {
-        showMessage(`Perfect! You colored all ${totalPath} path cells correctly!`, 'success');
+        showMessage(`Perfect! You found the ${colorName} path!`, 'success');
         playSound('complete');
         celebrate();
     } else if (correctCount === 0) {
-        showMessage('No path cells colored yet. Solve the math problems and color the cells!', 'info');
+        showMessage(`Find all cells that equal ${targetColor} and color them ${colorName}!`, 'info');
         playSound('wrong');
     } else {
-        showMessage(`${correctCount} of ${totalPath} path cells correct. Keep going!`, 'info');
+        showMessage(`${correctCount} of ${totalPath} path cells found. Keep looking for ${colorName}!`, 'info');
         playSound('click');
     }
 }
@@ -568,7 +668,9 @@ function showHint() {
 
 function resetMaze() {
     GameState.userColors = {};
+    GameState.correctCellCount = 0;
     renderMaze();
+    updateProgress();
     hideMessage();
     playSound('click');
 }

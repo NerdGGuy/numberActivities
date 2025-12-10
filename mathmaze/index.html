@@ -53,9 +53,25 @@
                         <option value="small">Small (5x5)</option>
                         <option value="medium">Medium (7x7)</option>
                         <option value="large">Large (9x9)</option>
+                        <optgroup label="A4 Print Sizes">
+                            <option value="a4Small">A4 Small (10x10)</option>
+                            <option value="a4Medium">A4 Medium (12x12)</option>
+                            <option value="a4Large">A4 Large (15x15)</option>
+                            <option value="a4XL">A4 Extra Large (18x18)</option>
+                        </optgroup>
                     </select>
                 </div>
                 <button class="btn btn-primary" id="newMazeBtn">New Maze</button>
+            </div>
+
+            <!-- Target Color Display - Shows kids which color to find -->
+            <div class="target-color-display" id="targetColorDisplay">
+                <!-- Populated by JavaScript -->
+            </div>
+
+            <!-- Progress Indicator -->
+            <div class="progress-indicator" id="progressIndicator">
+                <!-- Populated by JavaScript -->
             </div>
 
             <!-- Color Legend -->
@@ -104,31 +120,33 @@
                 <div class="instructions">
                     <div class="instruction-step">
                         <span class="step-number">1</span>
-                        <p>Look at the <strong>Color Key</strong> to see which answers match which colors.</p>
+                        <p>Look at the <strong>Target Color</strong> box - it shows which color to find!</p>
                     </div>
                     <div class="instruction-step">
                         <span class="step-number">2</span>
-                        <p>Find the <strong>START</strong> cell (green) and the <strong>END</strong> cell (red).</p>
+                        <p>The <strong>entire path</strong> is ONE color. Find cells where the math equals that number.</p>
                     </div>
                     <div class="instruction-step">
                         <span class="step-number">3</span>
-                        <p><strong>Solve</strong> each math problem in the maze cells.</p>
+                        <p><strong>Solve</strong> math problems. If the answer equals the target number, it's on the path!</p>
                     </div>
                     <div class="instruction-step">
                         <span class="step-number">4</span>
-                        <p><strong>Select a color</strong> from the palette, then click the cell to color it.</p>
+                        <p><strong>Select the target color</strong> and click path cells to color them.</p>
                     </div>
                     <div class="instruction-step">
                         <span class="step-number">5</span>
-                        <p>Color all the <strong>path cells</strong> correctly to reveal the solution!</p>
+                        <p>Find all path cells from <strong>START</strong> to <strong>END</strong> to win!</p>
                     </div>
                 </div>
                 <div class="tips">
                     <h3>Tips:</h3>
                     <ul>
-                        <li>The correct path only goes <strong>right</strong> or <strong>down</strong>.</li>
+                        <li>ALL path cells have the <strong>same answer</strong> - the target number!</li>
+                        <li>The path only goes <strong>right</strong> or <strong>down</strong>.</li>
+                        <li>Decoy cells have <strong>different answers</strong> - don't be fooled!</li>
                         <li>Use the <strong>eraser</strong> to fix mistakes.</li>
-                        <li>Click <strong>Check Answers</strong> to see how you're doing!</li>
+                        <li>Watch your <strong>progress bar</strong> to see how many path cells you've found!</li>
                     </ul>
                 </div>
             </div>

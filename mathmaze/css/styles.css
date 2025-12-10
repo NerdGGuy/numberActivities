@@ -219,6 +219,101 @@ body {
     align-items: flex-end;
 }
 
+/* ============================================
+   Target Color Display - Prominent path indicator
+   ============================================ */
+
+.target-color-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-lg) var(--spacing-xl);
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+    border: 3px solid #f59e0b;
+}
+
+.target-color-box {
+    width: 80px;
+    height: 80px;
+    border-radius: var(--radius-lg);
+    border: 4px solid rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-lg);
+    flex-shrink: 0;
+}
+
+.target-color-info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.target-label {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #92400e;
+}
+
+.target-instruction {
+    font-size: 1.1rem;
+    color: #78350f;
+}
+
+.target-instruction strong {
+    font-size: 1.3rem;
+    color: #92400e;
+}
+
+.target-color-name {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: #78350f;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* ============================================
+   Progress Indicator
+   ============================================ */
+
+.progress-indicator {
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-md);
+}
+
+.progress-text {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.progress-text strong {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.progress-bar {
+    height: 12px;
+    background: var(--bg-primary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    border: 2px solid var(--border-color);
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success) 0%, #16a34a 100%);
+    border-radius: var(--radius-full);
+    transition: width var(--transition-normal);
+}
+
 .setting-group {
     display: flex;
     flex-direction: column;
@@ -311,14 +406,16 @@ body {
 .maze-container {
     display: inline-block;
     background: var(--wall-color);
-    padding: 4px;
+    padding: 6px;
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-lg);
+    border: 3px solid #1a1a2e;
 }
 
 .maze-grid {
     display: grid;
-    gap: 4px;
+    gap: 5px;
+    background: var(--wall-color);
 }
 
 /* Maze Cells */
@@ -354,6 +451,31 @@ body {
     width: 50px;
     height: 50px;
     font-size: 0.75rem;
+}
+
+/* A4 Print-Optimized Sizes */
+.maze-cell.a4-sm {
+    width: 45px;
+    height: 45px;
+    font-size: 0.7rem;
+}
+
+.maze-cell.a4-md {
+    width: 38px;
+    height: 38px;
+    font-size: 0.65rem;
+}
+
+.maze-cell.a4-lg {
+    width: 32px;
+    height: 32px;
+    font-size: 0.55rem;
+}
+
+.maze-cell.a4-xl {
+    width: 26px;
+    height: 26px;
+    font-size: 0.5rem;
 }
 
 .maze-cell:hover:not(.wall):not(.start):not(.end) {
@@ -703,12 +825,59 @@ body {
         width: 100%;
     }
 
+    /* Target color display responsive */
+    .target-color-display {
+        flex-direction: column;
+        text-align: center;
+        padding: var(--spacing-md);
+    }
+
+    .target-color-box {
+        width: 60px;
+        height: 60px;
+    }
+
+    .target-label {
+        font-size: 1.25rem;
+    }
+
+    .target-instruction {
+        font-size: 1rem;
+    }
+
+    .target-color-name {
+        font-size: 1.5rem;
+    }
+
+    /* Progress indicator responsive */
+    .progress-indicator {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .progress-text {
+        font-size: 0.875rem;
+    }
+
     .maze-cell.small,
     .maze-cell.medium,
     .maze-cell.large {
         width: 45px;
         height: 45px;
         font-size: 0.7rem;
+    }
+
+    .maze-cell.a4-sm,
+    .maze-cell.a4-md {
+        width: 35px;
+        height: 35px;
+        font-size: 0.6rem;
+    }
+
+    .maze-cell.a4-lg,
+    .maze-cell.a4-xl {
+        width: 28px;
+        height: 28px;
+        font-size: 0.5rem;
     }
 
     .legend-items {
@@ -750,18 +919,52 @@ body {
         font-size: 0.6rem;
     }
 
+    .maze-cell.a4-sm,
+    .maze-cell.a4-md,
+    .maze-cell.a4-lg,
+    .maze-cell.a4-xl {
+        width: 24px;
+        height: 24px;
+        font-size: 0.45rem;
+    }
+
     .logo-text {
         font-size: 1.5rem;
+    }
+
+    .target-color-box {
+        width: 50px;
+        height: 50px;
+    }
+
+    .target-label {
+        font-size: 1.1rem;
+    }
+
+    .target-color-name {
+        font-size: 1.25rem;
     }
 }
 
 /* ============================================
-   Print Styles
+   Print Styles - Optimized for A4
    ============================================ */
 
 @media print {
+    @page {
+        size: A4;
+        margin: 10mm;
+    }
+
     body {
         background: white;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .app-container {
+        max-width: 100%;
+        padding: 0;
     }
 
     .header,
@@ -770,27 +973,50 @@ body {
     .controls,
     .message-area,
     .modal,
-    .celebration {
+    .celebration,
+    .progress-indicator {
         display: none !important;
+    }
+
+    /* Keep target color display for reference */
+    .target-color-display {
+        background: #fef3c7 !important;
+        border: 2px solid #f59e0b !important;
+        box-shadow: none;
+        margin-bottom: 10mm;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .target-color-box {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
     .maze-wrapper {
         box-shadow: none;
         padding: 0;
+        background: white;
     }
 
     .color-legend {
         box-shadow: none;
         border: 2px solid #000;
         page-break-inside: avoid;
+        margin-top: 5mm;
     }
 
     .maze-container {
         box-shadow: none;
+        border: 2px solid #000;
+    }
+
+    .maze-grid {
+        gap: 3px;
     }
 
     .maze-cell {
-        border: 1px solid #ccc;
+        border: 1px solid #999;
     }
 
     .maze-cell.wall {
@@ -805,9 +1031,40 @@ body {
         print-color-adjust: exact;
     }
 
-    /* Reset colored cells for printing */
+    /* A4 print-specific cell sizes */
+    .maze-cell.a4-sm {
+        width: 16mm;
+        height: 16mm;
+        font-size: 9pt;
+    }
+
+    .maze-cell.a4-md {
+        width: 14mm;
+        height: 14mm;
+        font-size: 8pt;
+    }
+
+    .maze-cell.a4-lg {
+        width: 11mm;
+        height: 11mm;
+        font-size: 7pt;
+    }
+
+    .maze-cell.a4-xl {
+        width: 9mm;
+        height: 9mm;
+        font-size: 6pt;
+    }
+
+    /* Reset colored cells for worksheet printing */
     .maze-cell.colored {
         background: white !important;
         color: black !important;
+    }
+
+    /* Ensure colors print for legend items */
+    .legend-color {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }
