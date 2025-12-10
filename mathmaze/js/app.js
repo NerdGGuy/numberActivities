@@ -925,9 +925,9 @@ function renderPuzzleHTML(puzzle, showAnswers = false) {
 let currentBookBWMode = false;
 
 /**
- * Generate and show book preview
+ * Generate book puzzles and show preview
  */
-function generateAndPrintBook() {
+function generateBook() {
     const puzzleCount = parseInt(document.getElementById('bookPuzzleCount').value);
     const sizeKey = document.getElementById('bookSize').value;
     const grade = parseInt(document.getElementById('bookGrade').value);
@@ -1115,7 +1115,7 @@ function init() {
     document.getElementById('printBookBtn').addEventListener('click', showBookModal);
     document.getElementById('closeBook').addEventListener('click', hideBookModal);
     document.getElementById('cancelBook').addEventListener('click', hideBookModal);
-    document.getElementById('generateBook').addEventListener('click', generateAndPrintBook);
+    document.getElementById('generateBook').addEventListener('click', generateBook);
 
     // Book preview actions
     document.getElementById('printBookNow').addEventListener('click', printBookNow);
