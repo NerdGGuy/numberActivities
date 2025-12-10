@@ -105,6 +105,7 @@
                 <button class="btn btn-secondary" id="resetBtn">↺ Reset</button>
                 <button class="btn btn-secondary" id="printBtn">🖨️ Print Color</button>
                 <button class="btn btn-secondary" id="printBWBtn">🖨️ Print B&W</button>
+                <button class="btn btn-primary" id="printBookBtn">📚 Print Book</button>
             </div>
 
             <!-- Message Area -->
@@ -152,6 +153,79 @@
                 </div>
             </div>
         </div>
+
+        <!-- Print Book Modal -->
+        <div class="modal" id="bookModal" style="display: none;">
+            <div class="modal-content book-modal-content">
+                <button class="modal-close" id="closeBook">&times;</button>
+                <h2>Print Puzzle Book</h2>
+                <p class="book-modal-intro">Create a workbook with multiple puzzles and answer keys for students.</p>
+
+                <div class="book-settings">
+                    <div class="book-setting-group">
+                        <label for="bookPuzzleCount">Number of Puzzles:</label>
+                        <select id="bookPuzzleCount">
+                            <option value="2">2 Puzzles</option>
+                            <option value="4">4 Puzzles</option>
+                            <option value="6" selected>6 Puzzles</option>
+                            <option value="8">8 Puzzles</option>
+                            <option value="10">10 Puzzles</option>
+                            <option value="12">12 Puzzles</option>
+                        </select>
+                    </div>
+
+                    <div class="book-setting-group">
+                        <label for="bookSize">Puzzle Size:</label>
+                        <select id="bookSize">
+                            <option value="a4Small">A4 Small (10x10)</option>
+                            <option value="a4Medium" selected>A4 Medium (12x12)</option>
+                            <option value="a4Large">A4 Large (15x15)</option>
+                        </select>
+                    </div>
+
+                    <div class="book-setting-group">
+                        <label for="bookGrade">Grade Level:</label>
+                        <select id="bookGrade">
+                            <option value="1">Grade 1-2 (Addition)</option>
+                            <option value="3">Grade 3 (Add, Subtract, Multiply)</option>
+                            <option value="4">Grade 4 (All Operations)</option>
+                            <option value="5">Grade 5 (Two-Step)</option>
+                        </select>
+                    </div>
+
+                    <div class="book-setting-group">
+                        <label for="bookMode">Difficulty:</label>
+                        <select id="bookMode">
+                            <option value="easy">Easy (3 Colors)</option>
+                            <option value="medium" selected>Medium (5 Colors)</option>
+                            <option value="hard">Hard (8 Colors)</option>
+                        </select>
+                    </div>
+
+                    <div class="book-setting-group book-checkbox">
+                        <label>
+                            <input type="checkbox" id="bookIncludeAnswers" checked>
+                            Include Answer Key
+                        </label>
+                    </div>
+
+                    <div class="book-setting-group book-checkbox">
+                        <label>
+                            <input type="checkbox" id="bookBWMode">
+                            Black & White (for coloring)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="book-actions">
+                    <button class="btn btn-secondary" id="cancelBook">Cancel</button>
+                    <button class="btn btn-primary" id="generateBook">Generate & Print Book</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Book Print Container (hidden, used for printing) -->
+        <div id="bookPrintContainer" class="book-print-container" style="display: none;"></div>
 
         <!-- Celebration Overlay -->
         <div class="celebration" id="celebration" style="display: none;">

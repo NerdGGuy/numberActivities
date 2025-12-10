@@ -775,6 +775,293 @@ function printMazeBW() {
 }
 
 // ============================================
+// Book Printing Functions
+// ============================================
+
+/**
+ * Generate a standalone puzzle for book printing
+ * Returns the puzzle data without modifying GameState
+ */
+function generatePuzzleForBook(settings) {
+    const { size, cellClass, grade, mode, activeColors } = settings;
+
+    // Select ONE target color for the entire path
+    const targetColor = activeColors[Math.floor(Math.random() * activeColors.length)];
+
+    // Initialize maze grid
+    const maze = [];
+    for (let i = 0; i < size; i++) {
+        maze.push(new Array(size).fill(null));
+    }
+
+    // Generate a corridor-style path from top-left to bottom-right
+    const path = generateCorridorPath(size);
+
+    // Mark path cells - ALL use the same target color!
+    path.forEach((pos, idx) => {
+        const problem = generateProblem(targetColor, grade);
+
+        maze[pos.y][pos.x] = {
+            type: 'path',
+            ...problem,
+            colorIndex: targetColor,
+            isStart: idx === 0,
+            isEnd: idx === path.length - 1
+        };
+    });
+
+    // Generate decoy colors (everything EXCEPT the target)
+    const decoyColors = activeColors.filter(c => c !== targetColor);
+
+    // Fill remaining cells with decoys and walls
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            if (!maze[y][x]) {
+                const isAdjacentToPath = isAdjacentTo(x, y, path);
+                const shouldBeDecoy = isAdjacentToPath ? Math.random() > 0.25 : Math.random() > 0.55;
+
+                if (shouldBeDecoy && decoyColors.length > 0) {
+                    const decoyColor = decoyColors[Math.floor(Math.random() * decoyColors.length)];
+                    const problem = generateProblem(decoyColor, grade);
+                    maze[y][x] = {
+                        type: 'decoy',
+                        ...problem,
+                        colorIndex: decoyColor
+                    };
+                } else {
+                    maze[y][x] = { type: 'wall' };
+                }
+            }
+        }
+    }
+
+    return {
+        maze,
+        path,
+        size,
+        cellClass,
+        targetColor,
+        activeColors
+    };
+}
+
+/**
+ * Render a puzzle grid as HTML for book printing
+ */
+function renderPuzzleHTML(puzzle, showAnswers = false) {
+    const { maze, size, cellClass, targetColor, activeColors } = puzzle;
+    const color = COLORS[targetColor];
+
+    // Target color display
+    let html = `
+        <div class="book-puzzle-header">
+            <div class="book-target-display">
+                <div class="book-target-box color-${targetColor}"></div>
+                <div class="book-target-info">
+                    <span class="book-target-label">Find the path!</span>
+                    <span class="book-target-instruction">Color all cells that equal <strong>${targetColor}</strong></span>
+                    <span class="book-target-color-name">${color.name}</span>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Maze grid
+    html += `<div class="book-maze-container">`;
+    html += `<div class="book-maze-grid" style="grid-template-columns: repeat(${size}, 1fr);">`;
+
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const cell = maze[y][x];
+
+            if (cell.type === 'wall') {
+                html += `<div class="book-maze-cell ${cellClass} wall"></div>`;
+            } else if (cell.isStart) {
+                html += `<div class="book-maze-cell ${cellClass} start">START</div>`;
+            } else if (cell.isEnd) {
+                html += `<div class="book-maze-cell ${cellClass} end">END</div>`;
+            } else {
+                // For answer key: show the path cells colored
+                const isPath = cell.type === 'path';
+                let colorClass = '';
+
+                if (showAnswers && isPath) {
+                    colorClass = `color-${cell.colorIndex} colored answer-highlight`;
+                }
+
+                html += `
+                    <div class="book-maze-cell ${cellClass} ${colorClass}">
+                        ${cell.expression}
+                    </div>
+                `;
+            }
+        }
+    }
+
+    html += `</div></div>`;
+
+    // Color legend
+    html += `<div class="book-color-legend">`;
+    html += `<h4>Color Key</h4>`;
+    html += `<div class="book-legend-items">`;
+
+    activeColors.forEach(colorNum => {
+        const colorInfo = COLORS[colorNum];
+        html += `
+            <div class="book-legend-item">
+                <div class="book-legend-color color-${colorNum}"></div>
+                <span>= ${colorNum}</span>
+                <span class="book-legend-name">(${colorInfo.name})</span>
+            </div>
+        `;
+    });
+
+    html += `</div></div>`;
+
+    return html;
+}
+
+/**
+ * Generate and print a puzzle book
+ */
+function generateAndPrintBook() {
+    const puzzleCount = parseInt(document.getElementById('bookPuzzleCount').value);
+    const sizeKey = document.getElementById('bookSize').value;
+    const grade = parseInt(document.getElementById('bookGrade').value);
+    const mode = document.getElementById('bookMode').value;
+    const includeAnswers = document.getElementById('bookIncludeAnswers').checked;
+    const bwMode = document.getElementById('bookBWMode').checked;
+
+    const { size, cellClass } = SIZE_CONFIG[sizeKey];
+    const activeColors = MODE_CONFIG[mode].colors;
+
+    const settings = {
+        size,
+        cellClass,
+        grade,
+        mode,
+        activeColors
+    };
+
+    // Generate all puzzles
+    const puzzles = [];
+    for (let i = 0; i < puzzleCount; i++) {
+        puzzles.push(generatePuzzleForBook(settings));
+    }
+
+    // Build the book HTML
+    const container = document.getElementById('bookPrintContainer');
+    let bookHTML = '';
+
+    // Title page
+    bookHTML += `
+        <div class="book-page book-title-page">
+            <div class="book-title-content">
+                <h1>Math Maze</h1>
+                <h2>Puzzle Workbook</h2>
+                <div class="book-title-info">
+                    <p><strong>${puzzleCount} Puzzles</strong></p>
+                    <p>Grade: ${grade <= 2 ? '1-2' : grade}</p>
+                    <p>Difficulty: ${MODE_CONFIG[mode].name}</p>
+                    <p>Grid Size: ${size}×${size}</p>
+                </div>
+                <div class="book-title-instructions">
+                    <h3>How to Play</h3>
+                    <ol>
+                        <li>Look at the Target Color box - it shows which color to find!</li>
+                        <li>Solve each math problem in the grid.</li>
+                        <li>If the answer equals the target number, color that cell with the target color.</li>
+                        <li>Find all path cells from START to END!</li>
+                    </ol>
+                    <p class="book-tip"><strong>Tip:</strong> The path only goes right or down. All path cells have the same answer!</p>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Puzzle pages
+    puzzles.forEach((puzzle, index) => {
+        bookHTML += `
+            <div class="book-page book-puzzle-page">
+                <div class="book-page-header">
+                    <span class="book-puzzle-number">Puzzle ${index + 1}</span>
+                    <span class="book-page-number">Page ${index + 2}</span>
+                </div>
+                ${renderPuzzleHTML(puzzle, false)}
+            </div>
+        `;
+    });
+
+    // Answer key pages (if enabled)
+    if (includeAnswers) {
+        bookHTML += `
+            <div class="book-page book-answer-header-page">
+                <div class="book-answer-title">
+                    <h2>Answer Key</h2>
+                    <p>The colored cells below show the correct path for each puzzle.</p>
+                </div>
+            </div>
+        `;
+
+        puzzles.forEach((puzzle, index) => {
+            bookHTML += `
+                <div class="book-page book-answer-page">
+                    <div class="book-page-header">
+                        <span class="book-puzzle-number">Puzzle ${index + 1} - Answer</span>
+                        <span class="book-page-number">Answer ${index + 1}</span>
+                    </div>
+                    ${renderPuzzleHTML(puzzle, true)}
+                </div>
+            `;
+        });
+    }
+
+    container.innerHTML = bookHTML;
+
+    // Hide the modal
+    hideBookModal();
+
+    // Add book printing class and B&W class if needed
+    document.body.classList.add('print-book');
+    if (bwMode) {
+        document.body.classList.add('print-bw');
+    }
+
+    // Show the book container for printing
+    container.style.display = 'block';
+
+    // Print
+    setTimeout(() => {
+        window.print();
+
+        // Cleanup after print dialog closes
+        setTimeout(() => {
+            document.body.classList.remove('print-book', 'print-bw');
+            container.style.display = 'none';
+            container.innerHTML = '';
+        }, 100);
+    }, 100);
+}
+
+/**
+ * Show the book printing modal
+ */
+function showBookModal() {
+    // Pre-populate with current settings
+    document.getElementById('bookGrade').value = document.getElementById('gradeSelect').value;
+    document.getElementById('bookMode').value = document.getElementById('modeSelect').value;
+
+    document.getElementById('bookModal').style.display = 'flex';
+}
+
+/**
+ * Hide the book printing modal
+ */
+function hideBookModal() {
+    document.getElementById('bookModal').style.display = 'none';
+}
+
+// ============================================
 // Initialization
 // ============================================
 
@@ -801,10 +1088,22 @@ function init() {
         generateMaze();
     });
 
+    // Book printing modal
+    document.getElementById('printBookBtn').addEventListener('click', showBookModal);
+    document.getElementById('closeBook').addEventListener('click', hideBookModal);
+    document.getElementById('cancelBook').addEventListener('click', hideBookModal);
+    document.getElementById('generateBook').addEventListener('click', generateAndPrintBook);
+
     // Close modal on background click
     document.getElementById('helpModal').addEventListener('click', (e) => {
         if (e.target.id === 'helpModal') {
             hideHelp();
+        }
+    });
+
+    document.getElementById('bookModal').addEventListener('click', (e) => {
+        if (e.target.id === 'bookModal') {
+            hideBookModal();
         }
     });
 
