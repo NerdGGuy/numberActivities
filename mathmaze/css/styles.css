@@ -390,6 +390,32 @@ body {
 }
 
 /* ============================================
+   Multiple Puzzles Container
+   ============================================ */
+
+.puzzles-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-2xl);
+}
+
+.puzzle-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.puzzle-header {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-align: center;
+    padding: var(--spacing-sm) 0;
+    border-bottom: 2px solid var(--border-color);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* ============================================
    Maze Container
    ============================================ */
 
@@ -1111,6 +1137,36 @@ body {
     }
 
     /* ============================================
+       Multiple Puzzles Print Styles
+       ============================================ */
+
+    .puzzles-container {
+        gap: 0;
+    }
+
+    .puzzle-wrapper {
+        page-break-after: always;
+        page-break-inside: avoid;
+        padding: 5mm 0;
+    }
+
+    .puzzle-wrapper:last-child {
+        page-break-after: auto;
+    }
+
+    .puzzle-header {
+        font-size: 14pt;
+        font-weight: 700;
+        color: var(--primary);
+        text-align: center;
+        padding: 2mm 0;
+        margin-bottom: 3mm;
+        border-bottom: 1px solid #000;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* ============================================
        B&W Print Mode - Empty boxes for coloring
        ============================================ */
 
@@ -1153,652 +1209,5 @@ body {
     /* B&W mode: Wall cells should still be visible */
     .print-bw .maze-cell.wall {
         background: #ccc !important;
-    }
-}
-
-/* ============================================
-   Book Modal Styles
-   ============================================ */
-
-.book-modal-content {
-    max-width: 450px;
-}
-
-.book-modal-intro {
-    text-align: center;
-    color: var(--text-secondary);
-    margin-bottom: var(--spacing-lg);
-}
-
-.book-settings {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-md);
-    margin-bottom: var(--spacing-lg);
-}
-
-.book-setting-group {
-    display: flex;
-    flex-direction: column;
-    gap: var(--spacing-xs);
-}
-
-.book-setting-group label {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-secondary);
-}
-
-.book-setting-group select {
-    padding: var(--spacing-sm) var(--spacing-md);
-    font-family: inherit;
-    font-size: 1rem;
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-md);
-    background: var(--bg-secondary);
-    cursor: pointer;
-}
-
-.book-setting-group select:focus {
-    outline: none;
-    border-color: var(--primary);
-}
-
-.book-checkbox {
-    flex-direction: row !important;
-    align-items: center;
-}
-
-.book-checkbox label {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    cursor: pointer;
-    font-size: 1rem;
-}
-
-.book-checkbox input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    cursor: pointer;
-}
-
-.book-actions {
-    display: flex;
-    gap: var(--spacing-md);
-    justify-content: flex-end;
-}
-
-/* ============================================
-   Book Print Container (Screen - Hidden)
-   ============================================ */
-
-.book-print-container {
-    display: none;
-}
-
-/* ============================================
-   Book Preview Mode (on-screen before printing)
-   ============================================ */
-
-.book-print-container.preview-mode {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: #e0e0e0;
-    z-index: 2000;
-    overflow-y: auto;
-}
-
-.book-preview-toolbar {
-    position: sticky;
-    top: 0;
-    left: 0;
-    right: 0;
-    background: var(--primary);
-    color: white;
-    padding: 12px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    z-index: 2001;
-}
-
-.book-preview-title {
-    font-size: 1.2rem;
-    font-weight: 600;
-}
-
-.book-preview-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.book-preview-actions .btn {
-    padding: 8px 16px;
-    font-size: 0.9rem;
-}
-
-.book-preview-content {
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    padding-bottom: 40px;
-}
-
-/* Book page preview styling (on screen) */
-.book-preview-content .book-page {
-    background: white;
-    width: 210mm;
-    min-height: 297mm;
-    padding: 15mm;
-    box-sizing: border-box;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    border-radius: 4px;
-}
-
-/* Title page on screen */
-.book-preview-content .book-title-page {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-}
-
-.book-preview-content .book-title-content h1 {
-    font-size: 28pt;
-    color: var(--primary);
-    margin-bottom: 10px;
-}
-
-.book-preview-content .book-title-content h2 {
-    font-size: 18pt;
-    color: var(--text);
-    margin-bottom: 20px;
-}
-
-.book-preview-content .book-title-info {
-    margin: 20px 0;
-    font-size: 12pt;
-}
-
-.book-preview-content .book-title-info p {
-    margin: 8px 0;
-}
-
-.book-preview-content .book-title-instructions {
-    text-align: left;
-    max-width: 500px;
-    margin: 30px auto 0;
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-}
-
-.book-preview-content .book-title-instructions h3 {
-    margin-bottom: 10px;
-    color: var(--primary);
-}
-
-.book-preview-content .book-title-instructions ol {
-    padding-left: 20px;
-    margin: 10px 0;
-}
-
-.book-preview-content .book-title-instructions li {
-    margin: 8px 0;
-}
-
-.book-preview-content .book-tip {
-    margin-top: 15px;
-    font-style: italic;
-    color: var(--text-light);
-}
-
-/* Puzzle page header on screen */
-.book-preview-content .book-page-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    font-weight: 600;
-    color: var(--text-light);
-}
-
-/* Answer header page on screen */
-.book-preview-content .book-answer-header-page {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.book-preview-content .book-answer-title {
-    text-align: center;
-}
-
-.book-preview-content .book-answer-title h2 {
-    font-size: 24pt;
-    color: var(--primary);
-    margin-bottom: 10px;
-}
-
-/* Hide toolbar when printing */
-@media print {
-    .book-preview-toolbar {
-        display: none !important;
-    }
-
-    .book-preview-content {
-        padding: 0;
-        gap: 0;
-    }
-
-    .book-preview-content .book-page {
-        box-shadow: none;
-        border-radius: 0;
-        width: auto;
-        min-height: auto;
-    }
-}
-
-/* ============================================
-   Book Print Styles
-   ============================================ */
-
-@media print {
-    /* When printing book, hide everything else */
-    .print-book .app-container {
-        display: none !important;
-    }
-
-    .print-book .book-print-container {
-        display: block !important;
-    }
-
-    /* Book page setup */
-    .book-page {
-        page-break-after: always;
-        page-break-inside: avoid;
-        padding: 5mm;
-        min-height: 277mm; /* A4 height minus margins */
-        box-sizing: border-box;
-    }
-
-    .book-page:last-child {
-        page-break-after: auto;
-    }
-
-    /* Title Page */
-    .book-title-page {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-    }
-
-    .book-title-content h1 {
-        font-size: 36pt;
-        color: var(--primary);
-        margin-bottom: 5mm;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .book-title-content h2 {
-        font-size: 24pt;
-        color: var(--text-secondary);
-        margin-bottom: 15mm;
-    }
-
-    .book-title-info {
-        font-size: 14pt;
-        color: var(--text-primary);
-        margin-bottom: 15mm;
-    }
-
-    .book-title-info p {
-        margin: 2mm 0;
-    }
-
-    .book-title-instructions {
-        text-align: left;
-        max-width: 150mm;
-        margin: 0 auto;
-        padding: 8mm;
-        background: #f8f9fa;
-        border-radius: 4mm;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .book-title-instructions h3 {
-        font-size: 14pt;
-        margin-bottom: 4mm;
-        color: var(--primary);
-    }
-
-    .book-title-instructions ol {
-        font-size: 11pt;
-        padding-left: 8mm;
-        margin-bottom: 4mm;
-    }
-
-    .book-title-instructions li {
-        margin-bottom: 2mm;
-    }
-
-    .book-tip {
-        font-size: 10pt;
-        font-style: italic;
-        margin-top: 4mm;
-    }
-
-    /* Page Header */
-    .book-page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 4mm;
-        padding-bottom: 2mm;
-        border-bottom: 1px solid #ccc;
-    }
-
-    .book-puzzle-number {
-        font-size: 14pt;
-        font-weight: 700;
-        color: var(--primary);
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .book-page-number {
-        font-size: 10pt;
-        color: var(--text-secondary);
-    }
-
-    /* Puzzle Header (Target Display) */
-    .book-puzzle-header {
-        margin-bottom: 3mm;
-    }
-
-    .book-target-display {
-        display: flex;
-        align-items: center;
-        gap: 4mm;
-        padding: 3mm 5mm;
-        background: #fef3c7;
-        border: 2px solid #f59e0b;
-        border-radius: 3mm;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .book-target-box {
-        width: 12mm;
-        height: 12mm;
-        border-radius: 2mm;
-        border: 2px solid rgba(0, 0, 0, 0.2);
-        flex-shrink: 0;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .book-target-info {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-    }
-
-    .book-target-label {
-        font-size: 11pt;
-        font-weight: 700;
-        color: #92400e;
-    }
-
-    .book-target-instruction {
-        font-size: 9pt;
-        color: #78350f;
-    }
-
-    .book-target-instruction strong {
-        font-size: 10pt;
-    }
-
-    .book-target-color-name {
-        font-size: 12pt;
-        font-weight: 800;
-        color: #78350f;
-        text-transform: uppercase;
-    }
-
-    /* Maze Container for Book */
-    .book-maze-container {
-        display: flex;
-        justify-content: center;
-        margin: 3mm 0;
-    }
-
-    .book-maze-grid {
-        display: grid;
-        gap: 2px;
-        background: #333;
-        padding: 3px;
-        border: 2px solid #000;
-        border-radius: 2mm;
-    }
-
-    /* Book Maze Cells */
-    .book-maze-cell {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: white;
-        border-radius: 1px;
-        font-weight: 700;
-        text-align: center;
-        padding: 1px;
-        line-height: 1.1;
-    }
-
-    .book-maze-cell.a4-sm {
-        width: 14mm;
-        height: 14mm;
-        font-size: 8pt;
-    }
-
-    .book-maze-cell.a4-md {
-        width: 12mm;
-        height: 12mm;
-        font-size: 7pt;
-    }
-
-    .book-maze-cell.a4-lg {
-        width: 10mm;
-        height: 10mm;
-        font-size: 6pt;
-    }
-
-    .book-maze-cell.wall {
-        background: #333 !important;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .book-maze-cell.start {
-        background: var(--start-color) !important;
-        color: white !important;
-        font-size: 6pt;
-        font-weight: 800;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .book-maze-cell.end {
-        background: var(--end-color) !important;
-        color: white !important;
-        font-size: 6pt;
-        font-weight: 800;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    /* Colored cells for answer key */
-    .book-maze-cell.colored {
-        color: white;
-        text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .book-maze-cell.colored.color-3 {
-        color: #1E293B;
-        text-shadow: none;
-    }
-
-    .book-maze-cell.color-1 { background: var(--color-1) !important; }
-    .book-maze-cell.color-2 { background: var(--color-2) !important; }
-    .book-maze-cell.color-3 { background: var(--color-3) !important; }
-    .book-maze-cell.color-4 { background: var(--color-4) !important; }
-    .book-maze-cell.color-5 { background: var(--color-5) !important; }
-    .book-maze-cell.color-6 { background: var(--color-6) !important; }
-    .book-maze-cell.color-7 { background: var(--color-7) !important; }
-    .book-maze-cell.color-8 { background: var(--color-8) !important; }
-
-    .book-maze-cell.answer-highlight {
-        box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.3);
-    }
-
-    /* Color Legend for Book */
-    .book-color-legend {
-        margin-top: 3mm;
-        padding: 2mm 3mm;
-        border: 1px solid #000;
-        border-radius: 2mm;
-    }
-
-    .book-color-legend h4 {
-        font-size: 9pt;
-        margin-bottom: 2mm;
-        text-align: center;
-    }
-
-    .book-legend-items {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 3mm;
-        justify-content: center;
-    }
-
-    .book-legend-item {
-        display: flex;
-        align-items: center;
-        gap: 1mm;
-        font-size: 8pt;
-        font-weight: 600;
-    }
-
-    .book-legend-color {
-        width: 5mm;
-        height: 5mm;
-        border-radius: 1mm;
-        border: 1px solid rgba(0, 0, 0, 0.2);
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .book-legend-color.color-1 { background: var(--color-1); }
-    .book-legend-color.color-2 { background: var(--color-2); }
-    .book-legend-color.color-3 { background: var(--color-3); }
-    .book-legend-color.color-4 { background: var(--color-4); }
-    .book-legend-color.color-5 { background: var(--color-5); }
-    .book-legend-color.color-6 { background: var(--color-6); }
-    .book-legend-color.color-7 { background: var(--color-7); }
-    .book-legend-color.color-8 { background: var(--color-8); }
-
-    .book-legend-name {
-        font-size: 7pt;
-        color: #666;
-    }
-
-    /* Answer Key Header Page */
-    .book-answer-header-page {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .book-answer-title {
-        text-align: center;
-    }
-
-    .book-answer-title h2 {
-        font-size: 28pt;
-        color: var(--primary);
-        margin-bottom: 5mm;
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .book-answer-title p {
-        font-size: 12pt;
-        color: var(--text-secondary);
-    }
-
-    /* Answer Page styling */
-    .book-answer-page .book-puzzle-number {
-        color: var(--success);
-    }
-
-    /* B&W Mode for Book Printing */
-    .print-bw .book-target-display {
-        background: white !important;
-        border: 2px solid #000 !important;
-    }
-
-    .print-bw .book-target-box {
-        background: white !important;
-        border: 3px solid #000 !important;
-    }
-
-    .print-bw .book-legend-color {
-        background: white !important;
-        border: 2px solid #000 !important;
-    }
-
-    .print-bw .book-maze-cell:not(.wall):not(.start):not(.end):not(.colored) {
-        background: white !important;
-        color: black !important;
-    }
-
-    .print-bw .book-maze-cell.start {
-        background: white !important;
-        color: black !important;
-        border: 2px dashed #000 !important;
-    }
-
-    .print-bw .book-maze-cell.end {
-        background: white !important;
-        color: black !important;
-        border: 2px double #000 !important;
-    }
-
-    .print-bw .book-maze-cell.wall {
-        background: #ccc !important;
-    }
-
-    /* Keep answer cells colored even in B&W mode for answer key */
-    .print-bw .book-answer-page .book-maze-cell.colored {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
-    }
-
-    .print-bw .book-title-instructions {
-        background: white !important;
-        border: 1px solid #000;
     }
 }

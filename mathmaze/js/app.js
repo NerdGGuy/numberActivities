@@ -8,19 +8,17 @@
 // ============================================
 
 const GameState = {
-    maze: null,
-    path: [],
+    puzzles: [],            // Array of puzzle objects when multiple puzzles
+    puzzleCount: 1,         // Number of puzzles to generate
     size: 5,
     grade: 1,
     mode: 'easy',
     selectedColor: null,
     isEraser: false,
-    userColors: {},
     soundEnabled: true,
     activeColors: [],
-    targetColor: null,      // The ONE color for the entire path
-    pathCellCount: 0,       // Total path cells (for progress)
-    correctCellCount: 0     // Correctly colored path cells
+    totalPathCells: 0,      // Total path cells across all puzzles
+    totalCorrectCells: 0    // Correctly colored cells across all puzzles
 };
 
 // Color mapping with 8 colors
@@ -230,12 +228,32 @@ function generateMaze() {
     GameState.cellClass = cellClass;
     GameState.grade = parseInt(document.getElementById('gradeSelect').value);
     GameState.mode = document.getElementById('modeSelect').value;
+    GameState.puzzleCount = parseInt(document.getElementById('puzzleCountSelect').value);
     GameState.activeColors = MODE_CONFIG[GameState.mode].colors;
-    GameState.userColors = {};
-    GameState.correctCellCount = 0;
+    GameState.totalPathCells = 0;
+    GameState.totalCorrectCells = 0;
 
-    // Select ONE target color for the entire path
-    GameState.targetColor = GameState.activeColors[Math.floor(Math.random() * GameState.activeColors.length)];
+    // Generate all puzzles
+    GameState.puzzles = [];
+    for (let i = 0; i < GameState.puzzleCount; i++) {
+        const puzzle = generateSinglePuzzle(size, cellClass, GameState.grade, GameState.activeColors);
+        GameState.puzzles.push(puzzle);
+        GameState.totalPathCells += puzzle.pathCellCount;
+    }
+
+    renderAllPuzzles();
+    renderColorLegend();
+    renderColorPalette();
+    updateProgress();
+    hideMessage();
+}
+
+/**
+ * Generate a single puzzle with its own maze, path, and target color
+ */
+function generateSinglePuzzle(size, cellClass, grade, activeColors) {
+    // Select ONE target color for this puzzle's path
+    const targetColor = activeColors[Math.floor(Math.random() * activeColors.length)];
 
     // Initialize maze grid
     const maze = [];
@@ -245,37 +263,34 @@ function generateMaze() {
 
     // Generate a corridor-style path from top-left to bottom-right
     const path = generateCorridorPath(size);
-    GameState.path = path;
-    GameState.pathCellCount = path.length - 2; // Exclude START and END
+    const pathCellCount = path.length - 2; // Exclude START and END
 
     // Mark path cells - ALL use the same target color!
     path.forEach((pos, idx) => {
-        const problem = generateProblem(GameState.targetColor, GameState.grade);
+        const problem = generateProblem(targetColor, grade);
 
         maze[pos.y][pos.x] = {
             type: 'path',
             ...problem,
-            colorIndex: GameState.targetColor, // Same color for ALL path cells
+            colorIndex: targetColor,
             isStart: idx === 0,
             isEnd: idx === path.length - 1
         };
     });
 
     // Generate decoy colors (everything EXCEPT the target)
-    const decoyColors = GameState.activeColors.filter(c => c !== GameState.targetColor);
+    const decoyColors = activeColors.filter(c => c !== targetColor);
 
     // Fill remaining cells with decoys and walls
     for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
             if (!maze[y][x]) {
                 const isAdjacentToPath = isAdjacentTo(x, y, path);
-                // More decoys near path to create challenge
                 const shouldBeDecoy = isAdjacentToPath ? Math.random() > 0.25 : Math.random() > 0.55;
 
                 if (shouldBeDecoy && decoyColors.length > 0) {
-                    // Decoy cells use NON-target colors
                     const decoyColor = decoyColors[Math.floor(Math.random() * decoyColors.length)];
-                    const problem = generateProblem(decoyColor, GameState.grade);
+                    const problem = generateProblem(decoyColor, grade);
                     maze[y][x] = {
                         type: 'decoy',
                         ...problem,
@@ -288,13 +303,16 @@ function generateMaze() {
         }
     }
 
-    GameState.maze = maze;
-    renderMaze();
-    renderTargetColor();
-    renderColorLegend();
-    renderColorPalette();
-    updateProgress();
-    hideMessage();
+    return {
+        maze,
+        path,
+        size,
+        cellClass,
+        targetColor,
+        pathCellCount,
+        correctCellCount: 0,
+        userColors: {}
+    };
 }
 
 /**
@@ -383,17 +401,58 @@ function isAdjacentTo(x, y, path) {
 // Rendering
 // ============================================
 
-function renderMaze() {
+/**
+ * Render all puzzles in the main container
+ */
+function renderAllPuzzles() {
     const container = document.getElementById('mazeContainer');
-    const { maze, size, cellClass } = GameState;
+    const { puzzles } = GameState;
 
-    let html = `<div class="maze-grid" style="grid-template-columns: repeat(${size}, 1fr);">`;
+    let html = '<div class="puzzles-container">';
+
+    puzzles.forEach((puzzle, puzzleIndex) => {
+        html += renderSinglePuzzle(puzzle, puzzleIndex);
+    });
+
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+/**
+ * Render a single puzzle with its target color display and maze grid
+ */
+function renderSinglePuzzle(puzzle, puzzleIndex) {
+    const { maze, size, cellClass, targetColor } = puzzle;
+    const color = COLORS[targetColor];
+
+    let html = `<div class="puzzle-wrapper" data-puzzle-index="${puzzleIndex}">`;
+
+    // Puzzle number header (only show if multiple puzzles)
+    if (GameState.puzzleCount > 1) {
+        html += `<div class="puzzle-header">Puzzle ${puzzleIndex + 1}</div>`;
+    }
+
+    // Target color display for this puzzle
+    html += `
+        <div class="target-color-display">
+            <div class="target-color-box color-${targetColor}"></div>
+            <div class="target-color-info">
+                <span class="target-label">Find the path!</span>
+                <span class="target-instruction">Color all cells that equal <strong>${targetColor}</strong></span>
+                <span class="target-color-name">${color.name}</span>
+            </div>
+        </div>
+    `;
+
+    // Maze grid
+    html += `<div class="maze-container">`;
+    html += `<div class="maze-grid" style="grid-template-columns: repeat(${size}, 1fr);">`;
 
     for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
             const cell = maze[y][x];
-            const cellId = `cell-${y}-${x}`;
-            const userColor = GameState.userColors[cellId];
+            const cellId = `cell-${puzzleIndex}-${y}-${x}`;
+            const userColor = puzzle.userColors[cellId];
 
             if (cell.type === 'wall') {
                 html += `<div class="maze-cell ${cellClass} wall"></div>`;
@@ -406,6 +465,7 @@ function renderMaze() {
                 html += `
                     <div class="maze-cell ${cellClass} ${colorClass}"
                          id="${cellId}"
+                         data-puzzle="${puzzleIndex}"
                          data-x="${x}"
                          data-y="${y}"
                          data-answer="${cell.answer}"
@@ -418,8 +478,8 @@ function renderMaze() {
         }
     }
 
-    html += '</div>';
-    container.innerHTML = html;
+    html += '</div></div></div>';
+    return html;
 }
 
 function renderColorLegend() {
@@ -462,41 +522,19 @@ function renderColorPalette() {
 }
 
 /**
- * Render the prominent target color display
- * Shows kids exactly which color they're looking for
- */
-function renderTargetColor() {
-    const container = document.getElementById('targetColorDisplay');
-    if (!container) return;
-
-    const { targetColor } = GameState;
-    const color = COLORS[targetColor];
-
-    container.innerHTML = `
-        <div class="target-color-box color-${targetColor}"></div>
-        <div class="target-color-info">
-            <span class="target-label">Find the path!</span>
-            <span class="target-instruction">Color all cells that equal <strong>${targetColor}</strong></span>
-            <span class="target-color-name">${color.name}</span>
-        </div>
-    `;
-    container.className = 'target-color-display';
-}
-
-/**
- * Update the progress indicator
+ * Update the progress indicator (counts across all puzzles)
  */
 function updateProgress() {
     const container = document.getElementById('progressIndicator');
     if (!container) return;
 
-    const { pathCellCount, correctCellCount } = GameState;
-    const percentage = pathCellCount > 0 ? Math.round((correctCellCount / pathCellCount) * 100) : 0;
+    const { totalPathCells, totalCorrectCells } = GameState;
+    const percentage = totalPathCells > 0 ? Math.round((totalCorrectCells / totalPathCells) * 100) : 0;
 
     container.innerHTML = `
         <div class="progress-text">
             <span>Path Progress:</span>
-            <strong>${correctCellCount} of ${pathCellCount}</strong>
+            <strong>${totalCorrectCells} of ${totalPathCells}</strong>
         </div>
         <div class="progress-bar">
             <div class="progress-fill" style="width: ${percentage}%"></div>
@@ -536,16 +574,20 @@ function selectEraser() {
 
 function handleCellClick(cellElement) {
     const cellId = cellElement.id;
+    const puzzleIndex = parseInt(cellElement.dataset.puzzle);
+    const puzzle = GameState.puzzles[puzzleIndex];
+
+    if (!puzzle) return;
 
     if (GameState.isEraser) {
         // Erase the color
-        delete GameState.userColors[cellId];
+        delete puzzle.userColors[cellId];
         cellElement.classList.remove('colored', 'color-1', 'color-2', 'color-3', 'color-4', 'color-5', 'color-6', 'color-7', 'color-8', 'correct', 'wrong');
         playSound('click');
     } else if (GameState.selectedColor) {
         // Apply the selected color
         const colorNum = GameState.selectedColor;
-        GameState.userColors[cellId] = colorNum;
+        puzzle.userColors[cellId] = colorNum;
 
         // Remove old color classes and add new one
         cellElement.classList.remove('color-1', 'color-2', 'color-3', 'color-4', 'color-5', 'color-6', 'color-7', 'color-8', 'correct', 'wrong');
@@ -562,88 +604,104 @@ function handleCellClick(cellElement) {
 // ============================================
 
 function checkAnswers() {
-    const { maze, size, path, targetColor } = GameState;
-    const colorName = COLORS[targetColor].name;
-    let correctCount = 0;
+    const { puzzles } = GameState;
+    let totalCorrect = 0;
     let totalPath = 0;
     let allCorrect = true;
 
-    // Check all non-wall, non-start, non-end cells
-    for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-            const cell = maze[y][x];
-            if (cell.type === 'wall' || cell.isStart || cell.isEnd) continue;
+    // Check each puzzle
+    puzzles.forEach((puzzle, puzzleIndex) => {
+        const { maze, size, targetColor } = puzzle;
 
-            const cellId = `cell-${y}-${x}`;
-            const cellElement = document.getElementById(cellId);
-            const userColor = GameState.userColors[cellId];
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                const cell = maze[y][x];
+                if (cell.type === 'wall' || cell.isStart || cell.isEnd) continue;
 
-            if (cell.type === 'path') {
-                totalPath++;
+                const cellId = `cell-${puzzleIndex}-${y}-${x}`;
+                const cellElement = document.getElementById(cellId);
+                const userColor = puzzle.userColors[cellId];
 
-                if (userColor === cell.colorIndex) {
-                    correctCount++;
-                    cellElement.classList.add('correct');
-                    cellElement.classList.remove('wrong');
-                } else if (userColor) {
-                    cellElement.classList.add('wrong');
-                    cellElement.classList.remove('correct');
-                    allCorrect = false;
-                } else {
-                    cellElement.classList.remove('correct', 'wrong');
-                    allCorrect = false;
-                }
-            } else if (cell.type === 'decoy' && userColor) {
-                // Decoy cells colored with target color are WRONG (not on path)
-                if (userColor === targetColor) {
-                    cellElement.classList.add('wrong');
-                    cellElement.classList.remove('correct');
-                } else if (userColor === cell.colorIndex) {
-                    // Colored correctly but not part of path - show as neutral
-                    cellElement.classList.remove('correct', 'wrong');
-                } else {
-                    cellElement.classList.add('wrong');
-                    cellElement.classList.remove('correct');
+                if (cell.type === 'path') {
+                    totalPath++;
+
+                    if (userColor === cell.colorIndex) {
+                        totalCorrect++;
+                        cellElement.classList.add('correct');
+                        cellElement.classList.remove('wrong');
+                    } else if (userColor) {
+                        cellElement.classList.add('wrong');
+                        cellElement.classList.remove('correct');
+                        allCorrect = false;
+                    } else {
+                        cellElement.classList.remove('correct', 'wrong');
+                        allCorrect = false;
+                    }
+                } else if (cell.type === 'decoy' && userColor) {
+                    // Decoy cells colored with target color are WRONG (not on path)
+                    if (userColor === targetColor) {
+                        cellElement.classList.add('wrong');
+                        cellElement.classList.remove('correct');
+                    } else if (userColor === cell.colorIndex) {
+                        cellElement.classList.remove('correct', 'wrong');
+                    } else {
+                        cellElement.classList.add('wrong');
+                        cellElement.classList.remove('correct');
+                    }
                 }
             }
         }
-    }
+
+        puzzle.correctCellCount = 0;
+        for (const pos of puzzle.path) {
+            if (pos === puzzle.path[0] || pos === puzzle.path[puzzle.path.length - 1]) continue;
+            const cellId = `cell-${puzzleIndex}-${pos.y}-${pos.x}`;
+            if (puzzle.userColors[cellId] === puzzle.targetColor) {
+                puzzle.correctCellCount++;
+            }
+        }
+    });
 
     // Update progress state
-    GameState.correctCellCount = correctCount;
+    GameState.totalCorrectCells = totalCorrect;
     updateProgress();
 
     // Show result message
-    if (allCorrect && correctCount === totalPath) {
-        showMessage(`Perfect! You found the ${colorName} path!`, 'success');
+    const puzzleWord = puzzles.length > 1 ? 'puzzles' : 'puzzle';
+    if (allCorrect && totalCorrect === totalPath) {
+        showMessage(`Perfect! You solved all ${puzzles.length} ${puzzleWord}!`, 'success');
         playSound('complete');
         celebrate();
-    } else if (correctCount === 0) {
-        showMessage(`Find all cells that equal ${targetColor} and color them ${colorName}!`, 'info');
+    } else if (totalCorrect === 0) {
+        showMessage(`Find and color the path cells in each puzzle!`, 'info');
         playSound('wrong');
     } else {
-        showMessage(`${correctCount} of ${totalPath} path cells found. Keep looking for ${colorName}!`, 'info');
+        showMessage(`${totalCorrect} of ${totalPath} path cells found. Keep going!`, 'info');
         playSound('click');
     }
 }
 
 function showHint() {
-    const { maze, size, path } = GameState;
+    const { puzzles } = GameState;
 
-    // Find a random uncolored or incorrectly colored path cell
+    // Find all uncolored or incorrectly colored path cells across all puzzles
     const uncoloredPath = [];
 
-    for (const pos of path) {
-        const cell = maze[pos.y][pos.x];
-        if (cell.isStart || cell.isEnd) continue;
+    puzzles.forEach((puzzle, puzzleIndex) => {
+        const { maze, path } = puzzle;
 
-        const cellId = `cell-${pos.y}-${pos.x}`;
-        const userColor = GameState.userColors[cellId];
+        for (const pos of path) {
+            const cell = maze[pos.y][pos.x];
+            if (cell.isStart || cell.isEnd) continue;
 
-        if (!userColor || userColor !== cell.colorIndex) {
-            uncoloredPath.push({ pos, cell, cellId });
+            const cellId = `cell-${puzzleIndex}-${pos.y}-${pos.x}`;
+            const userColor = puzzle.userColors[cellId];
+
+            if (!userColor || userColor !== cell.colorIndex) {
+                uncoloredPath.push({ pos, cell, cellId, puzzleIndex });
+            }
         }
-    }
+    });
 
     if (uncoloredPath.length === 0) {
         showMessage('All path cells are correctly colored!', 'success');
@@ -653,8 +711,9 @@ function showHint() {
     // Pick a random one to hint
     const hint = uncoloredPath[Math.floor(Math.random() * uncoloredPath.length)];
     const colorName = COLORS[hint.cell.colorIndex].name;
+    const puzzleNum = puzzles.length > 1 ? ` (Puzzle ${hint.puzzleIndex + 1})` : '';
 
-    showMessage(`Hint: ${hint.cell.expression} = ${hint.cell.answer}, so color it ${colorName}!`, 'info');
+    showMessage(`Hint${puzzleNum}: ${hint.cell.expression} = ${hint.cell.answer}, so color it ${colorName}!`, 'info');
 
     // Briefly highlight the cell
     const cellElement = document.getElementById(hint.cellId);
@@ -667,9 +726,13 @@ function showHint() {
 }
 
 function resetMaze() {
-    GameState.userColors = {};
-    GameState.correctCellCount = 0;
-    renderMaze();
+    // Reset all puzzles
+    GameState.puzzles.forEach(puzzle => {
+        puzzle.userColors = {};
+        puzzle.correctCellCount = 0;
+    });
+    GameState.totalCorrectCells = 0;
+    renderAllPuzzles();
     updateProgress();
     hideMessage();
     playSound('click');
@@ -775,316 +838,6 @@ function printMazeBW() {
 }
 
 // ============================================
-// Book Printing Functions
-// ============================================
-
-/**
- * Generate a standalone puzzle for book printing
- * Returns the puzzle data without modifying GameState
- */
-function generatePuzzleForBook(settings) {
-    const { size, cellClass, grade, mode, activeColors } = settings;
-
-    // Select ONE target color for the entire path
-    const targetColor = activeColors[Math.floor(Math.random() * activeColors.length)];
-
-    // Initialize maze grid
-    const maze = [];
-    for (let i = 0; i < size; i++) {
-        maze.push(new Array(size).fill(null));
-    }
-
-    // Generate a corridor-style path from top-left to bottom-right
-    const path = generateCorridorPath(size);
-
-    // Mark path cells - ALL use the same target color!
-    path.forEach((pos, idx) => {
-        const problem = generateProblem(targetColor, grade);
-
-        maze[pos.y][pos.x] = {
-            type: 'path',
-            ...problem,
-            colorIndex: targetColor,
-            isStart: idx === 0,
-            isEnd: idx === path.length - 1
-        };
-    });
-
-    // Generate decoy colors (everything EXCEPT the target)
-    const decoyColors = activeColors.filter(c => c !== targetColor);
-
-    // Fill remaining cells with decoys and walls
-    for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-            if (!maze[y][x]) {
-                const isAdjacentToPath = isAdjacentTo(x, y, path);
-                const shouldBeDecoy = isAdjacentToPath ? Math.random() > 0.25 : Math.random() > 0.55;
-
-                if (shouldBeDecoy && decoyColors.length > 0) {
-                    const decoyColor = decoyColors[Math.floor(Math.random() * decoyColors.length)];
-                    const problem = generateProblem(decoyColor, grade);
-                    maze[y][x] = {
-                        type: 'decoy',
-                        ...problem,
-                        colorIndex: decoyColor
-                    };
-                } else {
-                    maze[y][x] = { type: 'wall' };
-                }
-            }
-        }
-    }
-
-    return {
-        maze,
-        path,
-        size,
-        cellClass,
-        targetColor,
-        activeColors
-    };
-}
-
-/**
- * Render a puzzle grid as HTML for book printing
- */
-function renderPuzzleHTML(puzzle, showAnswers = false) {
-    const { maze, size, cellClass, targetColor, activeColors } = puzzle;
-    const color = COLORS[targetColor];
-
-    // Target color display
-    let html = `
-        <div class="book-puzzle-header">
-            <div class="book-target-display">
-                <div class="book-target-box color-${targetColor}"></div>
-                <div class="book-target-info">
-                    <span class="book-target-label">Find the path!</span>
-                    <span class="book-target-instruction">Color all cells that equal <strong>${targetColor}</strong></span>
-                    <span class="book-target-color-name">${color.name}</span>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Maze grid
-    html += `<div class="book-maze-container">`;
-    html += `<div class="book-maze-grid" style="grid-template-columns: repeat(${size}, 1fr);">`;
-
-    for (let y = 0; y < size; y++) {
-        for (let x = 0; x < size; x++) {
-            const cell = maze[y][x];
-
-            if (cell.type === 'wall') {
-                html += `<div class="book-maze-cell ${cellClass} wall"></div>`;
-            } else if (cell.isStart) {
-                html += `<div class="book-maze-cell ${cellClass} start">START</div>`;
-            } else if (cell.isEnd) {
-                html += `<div class="book-maze-cell ${cellClass} end">END</div>`;
-            } else {
-                // For answer key: show the path cells colored
-                const isPath = cell.type === 'path';
-                let colorClass = '';
-
-                if (showAnswers && isPath) {
-                    colorClass = `color-${cell.colorIndex} colored answer-highlight`;
-                }
-
-                html += `
-                    <div class="book-maze-cell ${cellClass} ${colorClass}">
-                        ${cell.expression}
-                    </div>
-                `;
-            }
-        }
-    }
-
-    html += `</div></div>`;
-
-    // Color legend
-    html += `<div class="book-color-legend">`;
-    html += `<h4>Color Key</h4>`;
-    html += `<div class="book-legend-items">`;
-
-    activeColors.forEach(colorNum => {
-        const colorInfo = COLORS[colorNum];
-        html += `
-            <div class="book-legend-item">
-                <div class="book-legend-color color-${colorNum}"></div>
-                <span>= ${colorNum}</span>
-                <span class="book-legend-name">(${colorInfo.name})</span>
-            </div>
-        `;
-    });
-
-    html += `</div></div>`;
-
-    return html;
-}
-
-// Store book settings for printing
-let currentBookBWMode = false;
-
-/**
- * Generate book puzzles and show preview
- */
-function generateBook() {
-    const puzzleCount = parseInt(document.getElementById('bookPuzzleCount').value);
-    const sizeKey = document.getElementById('bookSize').value;
-    const grade = parseInt(document.getElementById('bookGrade').value);
-    const mode = document.getElementById('bookMode').value;
-    const includeAnswers = document.getElementById('bookIncludeAnswers').checked;
-    const bwMode = document.getElementById('bookBWMode').checked;
-
-    const { size, cellClass } = SIZE_CONFIG[sizeKey];
-    const activeColors = MODE_CONFIG[mode].colors;
-
-    const settings = {
-        size,
-        cellClass,
-        grade,
-        mode,
-        activeColors
-    };
-
-    // Store B&W mode for later printing
-    currentBookBWMode = bwMode;
-
-    // Generate all puzzles
-    const puzzles = [];
-    for (let i = 0; i < puzzleCount; i++) {
-        puzzles.push(generatePuzzleForBook(settings));
-    }
-
-    // Build the book HTML
-    const contentContainer = document.getElementById('bookPreviewContent');
-    let bookHTML = '';
-
-    // Title page
-    bookHTML += `
-        <div class="book-page book-title-page">
-            <div class="book-title-content">
-                <h1>Math Maze</h1>
-                <h2>Puzzle Workbook</h2>
-                <div class="book-title-info">
-                    <p><strong>${puzzleCount} Puzzles</strong></p>
-                    <p>Grade: ${grade <= 2 ? '1-2' : grade}</p>
-                    <p>Difficulty: ${MODE_CONFIG[mode].name}</p>
-                    <p>Grid Size: ${size}×${size}</p>
-                </div>
-                <div class="book-title-instructions">
-                    <h3>How to Play</h3>
-                    <ol>
-                        <li>Look at the Target Color box - it shows which color to find!</li>
-                        <li>Solve each math problem in the grid.</li>
-                        <li>If the answer equals the target number, color that cell with the target color.</li>
-                        <li>Find all path cells from START to END!</li>
-                    </ol>
-                    <p class="book-tip"><strong>Tip:</strong> The path only goes right or down. All path cells have the same answer!</p>
-                </div>
-            </div>
-        </div>
-    `;
-
-    // Puzzle pages
-    puzzles.forEach((puzzle, index) => {
-        bookHTML += `
-            <div class="book-page book-puzzle-page">
-                <div class="book-page-header">
-                    <span class="book-puzzle-number">Puzzle ${index + 1}</span>
-                    <span class="book-page-number">Page ${index + 2}</span>
-                </div>
-                ${renderPuzzleHTML(puzzle, false)}
-            </div>
-        `;
-    });
-
-    // Answer key pages (if enabled)
-    if (includeAnswers) {
-        bookHTML += `
-            <div class="book-page book-answer-header-page">
-                <div class="book-answer-title">
-                    <h2>Answer Key</h2>
-                    <p>The colored cells below show the correct path for each puzzle.</p>
-                </div>
-            </div>
-        `;
-
-        puzzles.forEach((puzzle, index) => {
-            bookHTML += `
-                <div class="book-page book-answer-page">
-                    <div class="book-page-header">
-                        <span class="book-puzzle-number">Puzzle ${index + 1} - Answer</span>
-                        <span class="book-page-number">Answer ${index + 1}</span>
-                    </div>
-                    ${renderPuzzleHTML(puzzle, true)}
-                </div>
-            `;
-        });
-    }
-
-    contentContainer.innerHTML = bookHTML;
-
-    // Hide the modal
-    hideBookModal();
-
-    // Show the book preview container
-    const container = document.getElementById('bookPrintContainer');
-    container.classList.add('preview-mode');
-
-    // Add B&W class if needed (for preview)
-    if (bwMode) {
-        container.classList.add('print-bw');
-    }
-}
-
-/**
- * Print the book preview
- */
-function printBookNow() {
-    // Add print classes
-    document.body.classList.add('print-book');
-    if (currentBookBWMode) {
-        document.body.classList.add('print-bw');
-    }
-
-    // Print
-    window.print();
-
-    // Remove print classes after printing
-    document.body.classList.remove('print-book', 'print-bw');
-}
-
-/**
- * Close the book preview
- */
-function closeBookPreview() {
-    const container = document.getElementById('bookPrintContainer');
-    const contentContainer = document.getElementById('bookPreviewContent');
-
-    container.classList.remove('preview-mode', 'print-bw');
-    contentContainer.innerHTML = '';
-    currentBookBWMode = false;
-}
-
-/**
- * Show the book printing modal
- */
-function showBookModal() {
-    // Pre-populate with current settings
-    document.getElementById('bookGrade').value = document.getElementById('gradeSelect').value;
-    document.getElementById('bookMode').value = document.getElementById('modeSelect').value;
-
-    document.getElementById('bookModal').style.display = 'flex';
-}
-
-/**
- * Hide the book printing modal
- */
-function hideBookModal() {
-    document.getElementById('bookModal').style.display = 'none';
-}
-
-// ============================================
 // Initialization
 // ============================================
 
@@ -1111,26 +864,10 @@ function init() {
         generateMaze();
     });
 
-    // Book printing modal
-    document.getElementById('printBookBtn').addEventListener('click', showBookModal);
-    document.getElementById('closeBook').addEventListener('click', hideBookModal);
-    document.getElementById('cancelBook').addEventListener('click', hideBookModal);
-    document.getElementById('generateBook').addEventListener('click', generateBook);
-
-    // Book preview actions
-    document.getElementById('printBookNow').addEventListener('click', printBookNow);
-    document.getElementById('closeBookPreview').addEventListener('click', closeBookPreview);
-
     // Close modal on background click
     document.getElementById('helpModal').addEventListener('click', (e) => {
         if (e.target.id === 'helpModal') {
             hideHelp();
-        }
-    });
-
-    document.getElementById('bookModal').addEventListener('click', (e) => {
-        if (e.target.id === 'bookModal') {
-            hideBookModal();
         }
     });
 
