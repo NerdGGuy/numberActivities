@@ -1067,4 +1067,49 @@ body {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
+
+    /* ============================================
+       B&W Print Mode - Empty boxes for coloring
+       ============================================ */
+
+    /* B&W mode: Target color display - hide color box, show text only */
+    .print-bw .target-color-display {
+        background: white !important;
+        border: 2px solid #000 !important;
+    }
+
+    .print-bw .target-color-box {
+        background: white !important;
+        border: 3px solid #000 !important;
+    }
+
+    /* B&W mode: Legend colors become empty boxes with borders */
+    .print-bw .legend-color {
+        background: white !important;
+        border: 2px solid #000 !important;
+    }
+
+    /* B&W mode: All maze cells are white (empty) for coloring */
+    .print-bw .maze-cell:not(.wall):not(.start):not(.end) {
+        background: white !important;
+        color: black !important;
+    }
+
+    /* B&W mode: Start and end cells with distinctive black borders */
+    .print-bw .maze-cell.start {
+        background: white !important;
+        color: black !important;
+        border: 3px dashed #000 !important;
+    }
+
+    .print-bw .maze-cell.end {
+        background: white !important;
+        color: black !important;
+        border: 3px double #000 !important;
+    }
+
+    /* B&W mode: Wall cells should still be visible */
+    .print-bw .maze-cell.wall {
+        background: #ccc !important;
+    }
 }

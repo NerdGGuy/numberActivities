@@ -760,6 +760,20 @@ function printMaze() {
     window.print();
 }
 
+function printMazeBW() {
+    // Add B&W print class to body for black and white printing
+    document.body.classList.add('print-bw');
+
+    // Print the page
+    window.print();
+
+    // Remove the class after printing
+    // Use a small delay to ensure the print dialog has captured the styles
+    setTimeout(() => {
+        document.body.classList.remove('print-bw');
+    }, 100);
+}
+
 // ============================================
 // Initialization
 // ============================================
@@ -777,6 +791,7 @@ function init() {
     document.getElementById('hintBtn').addEventListener('click', showHint);
     document.getElementById('resetBtn').addEventListener('click', resetMaze);
     document.getElementById('printBtn').addEventListener('click', printMaze);
+    document.getElementById('printBWBtn').addEventListener('click', printMazeBW);
     document.getElementById('eraserBtn').addEventListener('click', selectEraser);
     document.getElementById('helpBtn').addEventListener('click', showHelp);
     document.getElementById('closeHelp').addEventListener('click', hideHelp);
