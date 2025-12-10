@@ -921,8 +921,11 @@ function renderPuzzleHTML(puzzle, showAnswers = false) {
     return html;
 }
 
+// Store book settings for printing
+let currentBookBWMode = false;
+
 /**
- * Generate and print a puzzle book
+ * Generate and show book preview
  */
 function generateAndPrintBook() {
     const puzzleCount = parseInt(document.getElementById('bookPuzzleCount').value);
@@ -943,6 +946,9 @@ function generateAndPrintBook() {
         activeColors
     };
 
+    // Store B&W mode for later printing
+    currentBookBWMode = bwMode;
+
     // Generate all puzzles
     const puzzles = [];
     for (let i = 0; i < puzzleCount; i++) {
@@ -950,7 +956,7 @@ function generateAndPrintBook() {
     }
 
     // Build the book HTML
-    const container = document.getElementById('bookPrintContainer');
+    const contentContainer = document.getElementById('bookPreviewContent');
     let bookHTML = '';
 
     // Title page
@@ -1016,31 +1022,48 @@ function generateAndPrintBook() {
         });
     }
 
-    container.innerHTML = bookHTML;
+    contentContainer.innerHTML = bookHTML;
 
     // Hide the modal
     hideBookModal();
 
-    // Add book printing class and B&W class if needed
-    document.body.classList.add('print-book');
+    // Show the book preview container
+    const container = document.getElementById('bookPrintContainer');
+    container.classList.add('preview-mode');
+
+    // Add B&W class if needed (for preview)
     if (bwMode) {
+        container.classList.add('print-bw');
+    }
+}
+
+/**
+ * Print the book preview
+ */
+function printBookNow() {
+    // Add print classes
+    document.body.classList.add('print-book');
+    if (currentBookBWMode) {
         document.body.classList.add('print-bw');
     }
 
-    // Show the book container for printing
-    container.style.display = 'block';
-
     // Print
-    setTimeout(() => {
-        window.print();
+    window.print();
 
-        // Cleanup after print dialog closes
-        setTimeout(() => {
-            document.body.classList.remove('print-book', 'print-bw');
-            container.style.display = 'none';
-            container.innerHTML = '';
-        }, 100);
-    }, 100);
+    // Remove print classes after printing
+    document.body.classList.remove('print-book', 'print-bw');
+}
+
+/**
+ * Close the book preview
+ */
+function closeBookPreview() {
+    const container = document.getElementById('bookPrintContainer');
+    const contentContainer = document.getElementById('bookPreviewContent');
+
+    container.classList.remove('preview-mode', 'print-bw');
+    contentContainer.innerHTML = '';
+    currentBookBWMode = false;
 }
 
 /**
@@ -1093,6 +1116,10 @@ function init() {
     document.getElementById('closeBook').addEventListener('click', hideBookModal);
     document.getElementById('cancelBook').addEventListener('click', hideBookModal);
     document.getElementById('generateBook').addEventListener('click', generateAndPrintBook);
+
+    // Book preview actions
+    document.getElementById('printBookNow').addEventListener('click', printBookNow);
+    document.getElementById('closeBookPreview').addEventListener('click', closeBookPreview);
 
     // Close modal on background click
     document.getElementById('helpModal').addEventListener('click', (e) => {
