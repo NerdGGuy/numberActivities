@@ -225,7 +225,16 @@
         </div>
 
         <!-- Book Print Container (hidden, used for printing) -->
-        <div id="bookPrintContainer" class="book-print-container" style="display: none;"></div>
+        <div id="bookPrintContainer" class="book-print-container" style="display: none;">
+            <div class="book-preview-toolbar" id="bookPreviewToolbar">
+                <span class="book-preview-title">📚 Book Preview</span>
+                <div class="book-preview-actions">
+                    <button class="btn btn-primary" id="printBookNow">🖨️ Print Book</button>
+                    <button class="btn btn-secondary" id="closeBookPreview">✕ Close Preview</button>
+                </div>
+            </div>
+            <div class="book-preview-content" id="bookPreviewContent"></div>
+        </div>
 
         <!-- Celebration Overlay -->
         <div class="celebration" id="celebration" style="display: none;">

@@ -1238,6 +1238,175 @@ body {
 }
 
 /* ============================================
+   Book Preview Mode (on-screen before printing)
+   ============================================ */
+
+.book-print-container.preview-mode {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #e0e0e0;
+    z-index: 2000;
+    overflow-y: auto;
+}
+
+.book-preview-toolbar {
+    position: sticky;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: var(--primary);
+    color: white;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 2001;
+}
+
+.book-preview-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.book-preview-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.book-preview-actions .btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+}
+
+.book-preview-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding-bottom: 40px;
+}
+
+/* Book page preview styling (on screen) */
+.book-preview-content .book-page {
+    background: white;
+    width: 210mm;
+    min-height: 297mm;
+    padding: 15mm;
+    box-sizing: border-box;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+}
+
+/* Title page on screen */
+.book-preview-content .book-title-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.book-preview-content .book-title-content h1 {
+    font-size: 28pt;
+    color: var(--primary);
+    margin-bottom: 10px;
+}
+
+.book-preview-content .book-title-content h2 {
+    font-size: 18pt;
+    color: var(--text);
+    margin-bottom: 20px;
+}
+
+.book-preview-content .book-title-info {
+    margin: 20px 0;
+    font-size: 12pt;
+}
+
+.book-preview-content .book-title-info p {
+    margin: 8px 0;
+}
+
+.book-preview-content .book-title-instructions {
+    text-align: left;
+    max-width: 500px;
+    margin: 30px auto 0;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.book-preview-content .book-title-instructions h3 {
+    margin-bottom: 10px;
+    color: var(--primary);
+}
+
+.book-preview-content .book-title-instructions ol {
+    padding-left: 20px;
+    margin: 10px 0;
+}
+
+.book-preview-content .book-title-instructions li {
+    margin: 8px 0;
+}
+
+.book-preview-content .book-tip {
+    margin-top: 15px;
+    font-style: italic;
+    color: var(--text-light);
+}
+
+/* Puzzle page header on screen */
+.book-preview-content .book-page-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    font-weight: 600;
+    color: var(--text-light);
+}
+
+/* Answer header page on screen */
+.book-preview-content .book-answer-header-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.book-preview-content .book-answer-title {
+    text-align: center;
+}
+
+.book-preview-content .book-answer-title h2 {
+    font-size: 24pt;
+    color: var(--primary);
+    margin-bottom: 10px;
+}
+
+/* Hide toolbar when printing */
+@media print {
+    .book-preview-toolbar {
+        display: none !important;
+    }
+
+    .book-preview-content {
+        padding: 0;
+        gap: 0;
+    }
+
+    .book-preview-content .book-page {
+        box-shadow: none;
+        border-radius: 0;
+        width: auto;
+        min-height: auto;
+    }
+}
+
+/* ============================================
    Book Print Styles
    ============================================ */
 
