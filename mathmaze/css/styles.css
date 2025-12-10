@@ -978,19 +978,45 @@ body {
         display: none !important;
     }
 
-    /* Keep target color display for reference */
+    /* Keep target color display for reference - compact for print */
     .target-color-display {
         background: #fef3c7 !important;
         border: 2px solid #f59e0b !important;
         box-shadow: none;
-        margin-bottom: 10mm;
+        margin-bottom: 3mm;
+        padding: 2mm 4mm;
+        gap: 3mm;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
 
     .target-color-box {
+        width: 10mm;
+        height: 10mm;
+        border-width: 2px;
+        border-radius: 2mm;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+    }
+
+    .target-color-info {
+        gap: 0;
+    }
+
+    .target-label {
+        font-size: 9pt;
+    }
+
+    .target-instruction {
+        font-size: 8pt;
+    }
+
+    .target-instruction strong {
+        font-size: 9pt;
+    }
+
+    .target-color-name {
+        font-size: 11pt;
     }
 
     .maze-wrapper {
@@ -1003,7 +1029,29 @@ body {
         box-shadow: none;
         border: 2px solid #000;
         page-break-inside: avoid;
-        margin-top: 5mm;
+        margin-top: 2mm;
+        padding: 2mm 3mm;
+    }
+
+    .color-legend h3 {
+        font-size: 9pt;
+        margin-bottom: 1mm;
+    }
+
+    .legend-items {
+        gap: 2mm;
+    }
+
+    .legend-item {
+        padding: 1mm 2mm;
+        font-size: 8pt;
+    }
+
+    .legend-color {
+        width: 5mm;
+        height: 5mm;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 
     .maze-container {
@@ -1060,12 +1108,6 @@ body {
     .maze-cell.colored {
         background: white !important;
         color: black !important;
-    }
-
-    /* Ensure colors print for legend items */
-    .legend-color {
-        -webkit-print-color-adjust: exact;
-        print-color-adjust: exact;
     }
 
     /* ============================================
